@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+      "module": "es6",
+      "target": "ES2016",
+      "jsx": "react",
+      "baseUrl": "./",
+      "resolveJsonModule": true,
+      "allowSyntheticDefaultImports":true,
+      "paths": {
+        "@/*": ["src/*"]       
+      },
+      "moduleResolution":"node",
+    },
+}
+
+  
