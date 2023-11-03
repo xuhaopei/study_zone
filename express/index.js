@@ -47,7 +47,7 @@ app.post('/a',urlencodedParser, (req,res)=>{
 app.get('/b',(req,res)=>{
   console.log('/b',req.query)
 })
-const port = 8080
+const port = 9000
 app.listen(port, () => {
     console.log(`http://${getIPAdress()}:${port}`)
 })
