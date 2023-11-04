@@ -1,28 +1,20 @@
-import { useDeferredValue, useState } from 'react'
+import { useDeferredValue, useState, Suspense, lazy } from 'react'
 import './index.css'
 import * as React from 'react'
-
+const Data = lazy(() => import('@/components/Data'))
+const Loading = () => {
+  return <div>loading...</div>
+}
 export default () => { 
-    const [count, setCount] = useState<number>(1)
-    const deferredValue = useDeferredValue(count)
+  const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
     return (
-      <>
-        <h1>Vite + React {deferredValue}</h1>
-        <div className="card">
-          {
-            new Array(10000).fill('_').map((item, index) => {
-              return  <button key={index} onClick={() => setCount((count) => count + 1)}>
-                count is {count}
-              </button>
-            })
-          }
-          <p>
-            Edit <code>src/App.tsx</code> and save to test HMR
-          </p>
-        </div>
-        <p className="read-the-docs">
-          Click on the Vite and React logos to learn more
-        </p>
-      </>
+      <div>
+        <input value={query} onChange={e => setQuery(e.target.value)} />
+        <Suspense fallback={<Loading></Loading>}>
+          <Data data={deferredQuery}></Data>
+        </Suspense>
+      </div>
+      
     )
   }
