@@ -28,7 +28,7 @@ const getIPAdress = () => {
 }
 app.use(Express.static(path.resolve(__dirname,'./dist/')))
 
-app.get('/*',(req,res)=>{
+app.get('/',(req,res)=>{
   res.setHeader('Content-Type','text/html')
   res.setHeader('Set-Cookie','username=xuhaopei')
   res.sendFile(path.resolve(__dirname,'./dist/index.html'))
@@ -46,8 +46,9 @@ app.post('/a',urlencodedParser, (req,res)=>{
 })
 app.get('/b',(req,res)=>{
   console.log('/b',req.query)
+  res.send('hhhh')
 })
-const port = 8080
+const port = 9000
 app.listen(port, () => {
     console.log(`http://${getIPAdress()}:${port}`)
 })

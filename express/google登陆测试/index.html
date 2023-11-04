@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+
+<button onclick="handleLogin()">login</button>
+<div id="google_btn"></div>
+<script>
+
+  function handleLogin() {
+    google.accounts.id.initialize({
+      client_id: '292700998486-i3ndfejpv4tko2qvahbfia3qi3a75br2.apps.googleusercontent.com',
+      context: 'signin',
+      ux_mode: 'popup',
+      callback: (response) => {
+        console.log('response', response)
+      },
+      auto_prompt: false
+    })
+    const parent = document.getElementById('google_btn');
+    google.accounts.id.renderButton(parent, {theme: "filled_blue"});
+    // google.accounts.id.prompt() // 这个代码是实现在当前页面弹出 登陆google账号的选择 
+  }
+</script>
+
+</html>
