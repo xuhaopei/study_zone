@@ -11,8 +11,13 @@
 <button onclick="ask()">ask</button>
 <div id="google_btn"></div>
 <script>
+  const httpRequest = new XMLHttpRequest()
+  httpRequest.onreadystatechange = () => {
+  // 在这里处理服务器响应。
+  };
   function ask() {
-    window.location.href = 'https://wa.me/85264710426'
+    httpRequest.open("GET", "http://192.168.28.35:9000/b", true);
+    httpRequest.send();
   }
 </script>
 
