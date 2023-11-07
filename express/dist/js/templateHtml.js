@@ -1,3 +1,4 @@
+export const templateHtml = `
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,7 +6,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
-  <script src="https://accounts.google.com/gsi/client" async></script>
   <style>
     body {
       display: flex;
@@ -14,12 +14,8 @@
     }
   </style>
 </head>
-
-<button onclick="ask()">ask</button>
-<div id="google_btn"></div>
-<script type="module">
-  import { wxPares } from './js/code.js'
-  wxPares()
-</script>
-
+<body>
+wxParse
+</body>
 </html>
+`
