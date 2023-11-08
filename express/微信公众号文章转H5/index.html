@@ -12,14 +12,20 @@
       flex-direction: column;
       align-items: center;
     }
+    frame {
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+    }
   </style>
 </head>
 
-<button onclick="ask()">ask</button>
 <div id="google_btn"></div>
 <script type="module">
   import { wxPares } from './js/code.js'
-  wxPares()
+  wxPares().then(url => {
+    window.open(url)
+  })
 </script>
 
 </html>
