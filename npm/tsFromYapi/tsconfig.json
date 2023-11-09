@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "CommonJS",
+    "noEmit": false,
+    "noImplicitAny": true,
+    "strict":true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "outDir": "./dist",
+    "types": ["@types/node"],
+  },
+  "include": ["./src"],
+  "exclude": ["node_modules", "dist"]
+}
