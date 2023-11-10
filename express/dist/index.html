@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <button onclick="begin()">begin</button>
+    <button onclick="begin3()">cleadr</button>
+</body>
+<script>
+    let datas = []
+    var timer = 0
+    function begin() {
+        console.log(122222)
+        timer = setInterval(() => {
+            let items = new Array(1000000).fill(1)
+            datas.push(items)
+            console.log(datas)
+        }, 1000)
+    }
+    function begin3() {
+        console.log(11111)
+        datas = []
+        clearInterval(timer)
+    }
+</script>
+</html>
