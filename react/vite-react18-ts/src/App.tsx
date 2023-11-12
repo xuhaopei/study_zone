@@ -2,6 +2,8 @@ import UseContext from '@/hooks/useContext'
 import UseDeferredValue from '@/hooks/useDeferredValue'
 import UseMemo from '@/hooks/useMemo'
 import UseLayoutEffect from './hooks/useLayoutEffect'
+import UseReducer from './hooks/useReducer'
+import UseSyncExternalStore from './hooks/useSyncExternalStore'
 import './App.css'
 import * as React from 'react'
 
@@ -11,7 +13,9 @@ function App() {
     {/* <UseContext></UseContext>*/}
     {/* <UseMemo></UseMemo> */}
     {/* <UseDeferredValue></UseDeferredValue> */}
-    <UseLayoutEffect></UseLayoutEffect>
+    {/* <UseLayoutEffect></UseLayoutEffect> */}
+    {/* <UseReducer></UseReducer> */}
+    <UseSyncExternalStore></UseSyncExternalStore>
     </>
   )
 }

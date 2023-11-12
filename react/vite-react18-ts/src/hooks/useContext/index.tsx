@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createContext, useContext } from 'react';
 export const Context = createContext<{ value, setValue }>(null)
 
+// ==============常用场景：跨组件通信================
 const SonSon1 = () => {
     console.log('SonSon1')
     const { value, setValue } = useContext(Context)
