@@ -4,6 +4,7 @@ import UseMemo from '@/hooks/useMemo'
 import UseLayoutEffect from './hooks/useLayoutEffect'
 import UseReducer from './hooks/useReducer'
 import UseSyncExternalStore from './hooks/useSyncExternalStore'
+import UseTransition from './hooks/useTransition'
 import './App.css'
 import * as React from 'react'
 
@@ -15,7 +16,8 @@ function App() {
     {/* <UseDeferredValue></UseDeferredValue> */}
     {/* <UseLayoutEffect></UseLayoutEffect> */}
     {/* <UseReducer></UseReducer> */}
-    <UseSyncExternalStore></UseSyncExternalStore>
+    {/* <UseSyncExternalStore></UseSyncExternalStore> */}
+    <UseTransition></UseTransition>
     </>
   )
 }
