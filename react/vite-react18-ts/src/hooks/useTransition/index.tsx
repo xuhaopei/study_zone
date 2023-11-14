@@ -1,7 +1,7 @@
 import React, { useState, memo, useReducer, useSyncExternalStore, useEffect, useTransition } from 'react';
 import { createContext, useContext } from 'react';
-
-// ==============常用场景：性能优化，让组件即使处于js执行状态也能被用户交互============================
+import './index.css'
+// ==============常用场景：交互体验优化，使用transition控制的组件显示能够被中断，以此保证交互性。============================
 
 
 const ComNormal1 = () => {
@@ -38,8 +38,8 @@ export default () => {
     let [isPending, transition] = useTransition()
     return <div className='wrapper'>
         <button onClick={() => setName(1)}>正常组件1</button>
-        <button onClick={() => transition(() => setName(2))}>慢组件</button>
-        {/* <button onClick={() => setName(2)}>慢组件</button> */}
+        <button onClick={() => transition(() => setName(2))}>使用transition的慢组件，可以中断点击其他按钮</button>
+        <button onClick={() => setName(2)}>不使用transition的慢组件，不能中断点击其他按钮</button>
         <button onClick={() => setName(3)}>正常组件2</button>
         { isPending && <div>ppppending</div>}
         {
