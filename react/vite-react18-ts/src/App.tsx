@@ -5,6 +5,7 @@ import UseLayoutEffect from './hooks/useLayoutEffect'
 import UseReducer from './hooks/useReducer'
 import UseSyncExternalStore from './hooks/useSyncExternalStore'
 import UseTransition from './hooks/useTransition'
+import Memo from './apis/memo'
 import './App.css'
 import * as React from 'react'
 
@@ -17,7 +18,8 @@ function App() {
     {/* <UseLayoutEffect></UseLayoutEffect> */}
     {/* <UseReducer></UseReducer> */}
     {/* <UseSyncExternalStore></UseSyncExternalStore> */}
-    <UseTransition></UseTransition>
+    {/* <UseTransition></UseTransition> */}
+    <Memo></Memo>
     </>
   )
 }

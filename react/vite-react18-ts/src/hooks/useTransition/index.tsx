@@ -1,7 +1,7 @@
 import React, { useState, memo, useReducer, useSyncExternalStore, useEffect, useTransition } from 'react';
 import { createContext, useContext } from 'react';
 import './index.css'
-// ==============常用场景：交互体验优化，使用transition控制的组件显示能够被中断，以此保证交互性。============================
+// ==============常用场景：本质上是用于一些不是很急迫的更新上，交互体验优化，使用transition控制的组件显示能够被中断，以此保证交互性。============================
 
 
 const ComNormal1 = () => {
