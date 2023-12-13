@@ -2,61 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        div {
+            border: 1px solid black;
+            width: 500px;
+            height: 500px;
+        }
+    </style>
 </head>
 <body>
-    <button onclick="beginAddMemoryForArray()">给数组增加内存</button>
-    <button onclick="clearMemoryForArray()">清除数组内存</button>
-    <button onclick="beginAddMemoryForObj()">给对象增加内存</button>
-    <button onclick="clearMemoryForObj()">清除对象内存</button>
-    <button onclick="addBibaoMemory()">点击给闭包添加内存</button>
-    <button onclick="addBibaoMemory2()">点击给闭包添加内存</button>
-    <button onclick="deleteVarUseBibao()">删除引用闭包的变量</button>
+    <div id="div1">1</div>
+    <div id="div2">2</div>
+    <div id="div3">3</div>
+    <div id="div4">4</div>
+    <div id="div5">5</div>
 </body>
-<script>
-    let datas = []
-    let obj = {}
-    let timer = 0
-    function beginAddMemoryForArray() {
-        alert('开始数组增加内存')
-        timer = setInterval(() => {
-            let items = new Array(1000000).fill(1)
-            datas.push(items)
-        }, 1000)
-    }
-    function beginAddMemoryForObj() {
-        alert('开始对象增加内存')
-        timer = setInterval(() => {
-            let items = new Array(1000000).fill(1)
-            obj[new Date().getTime() + '_'] = items
-            console.log(obj)
-        }, 1000)
-    }
-    function clearMemoryForArray() {
-        alert('清除数组内存')
-        datas.length = 0 // 通过google任务管理器可以发现：清除数组内存，需要通过 .length = 0 才能清除， 重新赋值 datas = [] 是没有效果的。
-        clearInterval(timer)
-    }
-    function clearMemoryForObj() {
-        alert('清除对象内存')
-        // obj = {} 
-        Object.keys(obj).forEach((key) => delete obj[key]) // 通过google任务管理器可以发现：清除对象内存，需要通过delete 删除对象的key 才能清除， 重新赋值 obj = {} 是没有效果的。
-        clearInterval(timer)
-    }
-    function fatherOfBibao() {
-        let list = []
-        return () => {
-            alert(list.length)
-            list.push(new Array(50000).fill(1))
-        }
-    }
-    let addBibaoMemory = fatherOfBibao() // 每次返回的函数引用地址是不一样的，这就意味着这个闭包变量只有这个函数能用
-    let addBibaoMemory2 = fatherOfBibao() // 每次返回的函数引用地址是不一样的，这就意味着这个闭包变量只有这个函数能用
 
-    function deleteVarUseBibao() {
-        console.log('删除')
-        addBibaoMemory = undefined // 删除了addBibaoMemory闭包所产生的内存，但是addBibaoMemory2的所产生的内存还在
-    }
+<script>
+    var observer = new IntersectionObserver((list) => {
+        console.log(list[0])
+    });
+    observer.observe(document.getElementById('div1'))
+    observer.observe(document.getElementById('div5'))
 </script>
 </html>
