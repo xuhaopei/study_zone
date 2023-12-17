@@ -22,10 +22,26 @@
 </body>
 
 <script>
-    var observer = new IntersectionObserver((list) => {
-        console.log(list[0])
-    });
-    observer.observe(document.getElementById('div1'))
-    observer.observe(document.getElementById('div5'))
+    async function fn1 () {
+        console.log(1)
+        setTimeout(() => {
+            console.log(7)
+        }, 0);
+        await fn2()
+        console.log(6)
+    }
+    async function fn2 () {
+        console.log(2)
+    }
+    setTimeout(() => {
+        console.log(3)
+        new Promise((res,rej) => {
+            console.log(4)
+            res()
+        }).then(() => {
+            console.log(5)
+        })
+    }, 0);
+    fn1()
 </script>
 </html>
