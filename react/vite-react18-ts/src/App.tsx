@@ -12,14 +12,14 @@ import * as React from 'react'
 function App() {
   return (
     <>
-    {/* <UseContext></UseContext>*/}
+    <UseContext></UseContext>
     {/* <UseMemo></UseMemo> */}
     {/* <UseDeferredValue></UseDeferredValue> */}
     {/* <UseLayoutEffect></UseLayoutEffect> */}
     {/* <UseReducer></UseReducer> */}
     {/* <UseSyncExternalStore></UseSyncExternalStore> */}
     {/* <UseTransition></UseTransition> */}
-    <Memo></Memo>
+    {/* <Memo></Memo> */}
     </>
   )
 }
