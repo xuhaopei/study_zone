@@ -38,6 +38,10 @@ app.get('/c',(req,res)=>{
   res.setHeader('Set-Cookie','username=xuhaopei')
   res.sendFile(path.resolve(__dirname,'./dist/index.html'))
 })
+app.get('/heart',(req,res)=>{
+  console.log('heart')
+  res.send('heart')
+})
 app.post('/a',urlencodedParser, (req,res)=>{
   console.log('/a', req.body)
   res.setHeader('Content-Type','text/html')
