@@ -1,0 +1,18 @@
+{
+  "name": "testtreeshaking",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "analyze": "webpack  webpack.config.js"
+  },
+  "dependencies": {
+    "antd-mobile": "^5.29.1",
+    "webpack": "4.19.1",
+    "webpack-bundle-analyzer": "^3.6.0",
+    "webpack-cli": "^3.3.12"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {}
+}
