@@ -4,7 +4,21 @@ var url = require('url')
 var path = require('path')
 let util = require('../util/index')
 const port = 8088
+const mime = {
+    'html': 'text/html; chartset=utf-8', // 如果html设置了chartset=utf-8，那么后面的css与js都会以它为标准来设置字符编码 
+    'js': 'text/javascript',
+    'css': 'text/css',
+    'jpg': 'image/jpg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+}
 http.createServer((request, response) => {
+    if (request.method !== 'GET') {
+        response.writeHead(405, { 'Content-Type': 'text/html; chartset=utf-8' })
+        response.end('<h1>405 method not allow</h1>')
+        return
+    }
     // 解析请求，包括文件名
     var pathname = url.parse(request.url).pathname
     // 输出请求的文件名
@@ -18,44 +32,17 @@ http.createServer((request, response) => {
             console.log(err)
             // HTTP 状态码: 404 : NOT FOUND
             // Content Type: text/html
-            response.writeHead(404, { 'Content-Type': 'text/html' })
+            response.writeHead(404, { 'Content-Type': 'text/html; chartset=utf-8' })
+            //  发送响应数据
+            response.end('<h1>404 NOT Found</h1>')
         } else {
             // HTTP 状态码: 200 : OK
             // 根据文件类型设置对应的响应头与内容
             let type = staticPath.split('.')[1]
-            switch (type) {
-                case 'html':
-                    response.writeHead(200, { 'Content-Type': 'text/html' })
-                    response.write(data.toString())
-                    break
-                case 'js':
-                    response.writeHead(200, { 'Content-Type': 'text/javascript' })
-                    response.write(data.toString())
-                    break
-                case 'css':
-                    response.writeHead(200, { 'Content-Type': 'text/css' })
-                    response.write(data.toString())
-                    break
-                case 'jpg':
-                    contentType = 'image/jpg'
-                    break
-                case 'jpeg':
-                    response.writeHead(200, { 'Content-Type': 'image/jpeg' })
-                    response.write(data, 'binary')
-                    break
-                case 'png':
-                    contentType = 'image/png'
-                    break
-                case 'gif':
-                    contentType = 'image/gif'
-                    break
-                case 'svg':
-                    contentType = 'image/svg'
-                    break
-            }
+            response.writeHead(200, { 'Content-Type': mime[type]})
+            //  发送响应数据
+            response.end(data)
         }
-        //  发送响应数据
-        response.end()
     })
 }).listen(port)
 
