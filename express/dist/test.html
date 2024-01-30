@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <button onclick="goHash()">iframe hash变化</button>
+    <div id="recordHash"></div>
+</body>
+<script>
+    window.addEventListener('hashchange',function(event){
+        console.log(event);
+        let divEle = document.getElementById('recordHash')
+        divEle.innerHTML = event.newURL
+    })
+    let time = 0
+    const goHash = () => {
+        window.location.hash = new Date().getTime()
+        time++
+        console.log('time', time)
+    }
+</script>
+
+</html>
