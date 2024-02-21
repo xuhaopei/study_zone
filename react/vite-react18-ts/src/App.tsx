@@ -6,13 +6,14 @@ import UseReducer from './hooks/useReducer'
 import UseSyncExternalStore from './hooks/useSyncExternalStore'
 import UseTransition from './hooks/useTransition'
 import Memo from './apis/memo'
+import UseDebonce from './hooks/useDebonce'
 import './App.css'
 import * as React from 'react'
 
 function App() {
   return (
     <>
-    <UseContext></UseContext>
+    {/* <UseContext></UseContext> */}
     {/* <UseMemo></UseMemo> */}
     {/* <UseDeferredValue></UseDeferredValue> */}
     {/* <UseLayoutEffect></UseLayoutEffect> */}
@@ -20,6 +21,7 @@ function App() {
     {/* <UseSyncExternalStore></UseSyncExternalStore> */}
     {/* <UseTransition></UseTransition> */}
     {/* <Memo></Memo> */}
+    <UseDebonce></UseDebonce>
     </>
   )
 }
