@@ -12,6 +12,7 @@ const useDebonce = (value, limitTime) => {
     }, [value])
     return debonceValue
 }
+requestAnimationFrame
 export default () => {
     const [value, setValue] = useState(0)
     const value1 = useDebonce(value, 500)
