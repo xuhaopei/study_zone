@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        iframe {
+            position: relative;
+            width: 500px;
+            background-color: aqua;
+        }
+    </style>
+</head>
+
+<body>
+    <p>测试iframe对html的url影响</p>
+    <p>正常情况下，html的url变化用栈进行了保存， 但是当iframe的url变化后，url也用栈进行了保存，这就导致了，操作系统的返回会优先触发iframe的返回</p>
+    <p>这种情况对我们接入三方游戏是非常不友好的，因为三方游戏的url会经常变来变出，当我们在父元素中控制回退的时候，如果操作的是系统的返回会出现不符合预期的情况。</p>
+    <p>故此我想在这里测试下，当iframe变化的时候，如果我将iframe给删除，同时也会把浏览器保存的url也给删除么？</p>
+    <p>测试发现是不会的，很失望！</p>
+    <p>问题的背景：</p>
+    <p>html的游戏大厅hashUrl是gameLobby</p>
+    <p>html点击进入hashUrl为gameDetail，此时这个页面有iframe</p>
+    <p>这时候iframe的url会变化多次导致history发生变化，这会导致调用history.go(-1)在html上有异常</p>
+    <p>html点击hashUrl为rechorge的充值页面</p>
+    <p>再次点击 返回</p>
+
+    <p>解决思路</p>
+    <p>当我们打开html，记录此时的history.length 为preLength</p>
+    <p>当我们点击返回的时候 获取当前的history.length - preLength 为backSteap </p>
+    <p>调用history.go(-(backSteap + 1))</p>
+
+    <p>当我们在gameDetail的时候，前往recharge的充值页面时</p>
+    <p>调用history.go(-(backSteap + 1))， 删除iframe</p>
+    <p>返回的时候，记录此时的history.length， 重新渲染iframe</p>
+
+    <p>遇到的问题：</p>
+    <p>window.history.length 是不准的，iframe的url变化一次,window.history.length不一定增加一次，有误差。</p>
+
+
+    <p>更新解决方法：</p>
+    <p>前往：gameDetail的时候，记录此时的preUrl</p>
+    <p>在gameDetail返回的时候，调用back后，判断此时的url是不是与preUrl相同，如果不是则继续调用back</p>
+    <button onclick="goHash('goHashgameDetail')">前往游戏运行页面</button>
+    <button onclick="goHash('goHashgamerechorge')">前往充值页面</button>
+    <button onclick="back('')">返回</button>
+    <button onclick="back(1)">系统返回</button>
+    <button onclick="delIframe()">删除iframe</button>
+    <br>
+    <!-- <iframe src="./test.html" frameborder="0"></iframe> -->
+</body>
+<script>
+    // let historyLength = window.history.length
+    let preUrl = window.location
+    const goHash = (data) => {
+        if (data === 'goHashgameDetail') {
+            crateIframe()
+        }
+        window.location.hash = data
+    }
+    const delIframe = () => {
+        let iframeEle = document.getElementsByTagName('iframe')[0]
+        document.body.removeChild(iframeEle)
+    }
+    const crateIframe = () => {
+        let iframe = document.createElement('iframe')
+        iframe.src = './test.html'
+        document.body.appendChild(iframe)
+        historyLength = window.history.length
+    }
+    const back = (data) => {
+        if (data) {
+            window.history.back()
+            return
+        }
+        window.history.back()
+        if (window.location.href !== preUrl) {
+            setTimeout(() => {
+                back()
+            }, 0);
+        }
+    }
+    window.addEventListener('hashchange', function (event) {
+        // console.log('html', event)
+    })
+</script>
+
+</html>
