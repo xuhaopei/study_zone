@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            position: relative;
+            width: 100%;
+            height: 200vh;
+        }
+        div {
+            border: 1px solid black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80%;
+            height: 80%;
+        }
+        .div1 {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: white;
+            text-align: center;
+        }
+
+    </style>
+    <script src="https://momentjs.com/downloads/moment.min.js"></script>
+</head>
+<body>
+    <p>moment中关于时区问题：</p>
+    <script>
+        console.log('没有给予参数时间，默认取本地时间，设置utcOffset是生效的')
+        console.log('本地时间', moment().format('YYYY-MM-DD HH:mm:ss'))
+        console.log('北京时间', moment().utcOffset('08:00').format('YYYY-MM-DD HH:mm:ss'))
+        console.log('墨西哥时间', moment().utcOffset('-06:00').format('YYYY-MM-DD HH:mm:ss'))
+        console.log('================================')
+        console.log('给予参数时间（YYYY-MM-DD HH:mm:ss），设置utcOffset是生效的')
+        console.log('北京时间', moment('2008-01-01 14:00:00').utcOffset('08:00').format('YYYY-MM-DD HH:mm:ss'))
+        console.log('墨西哥时间', moment('2008-01-01 14:00:00').utcOffset('-06:00').format('YYYY-MM-DD HH:mm:ss'))
+    </script>
+</body>
+</html>
