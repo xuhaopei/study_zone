@@ -9,8 +9,9 @@ import Memo from './apis/memo'
 import UseDebonce from './hooks/useDebonce'
 import './App.css'
 import * as React from 'react'
-
+import { initStore, initReducer, Context } from '@/stroe'
 function App() {
+  const [state, dispacth] = React.useReducer(initReducer, initStore)
   return (
     <>
     {/* <UseContext></UseContext> */}
@@ -21,7 +22,8 @@ function App() {
     {/* <UseSyncExternalStore></UseSyncExternalStore> */}
     {/* <UseTransition></UseTransition> */}
     {/* <Memo></Memo> */}
-    <UseDebonce></UseDebonce>
+    {/* <UseDebonce></UseDebonce> */}
+    <Context.Provider value={{state, dispacth}}></Context.Provider>
     </>
   )
 }
