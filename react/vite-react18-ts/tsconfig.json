@@ -9,7 +9,8 @@
     "paths": {
       "@/*": ["src/*"]       
     },
-    "moduleResolution":"node",
+    "noImplicitAny": false, // 允许隐式的any类型
+    "moduleResolution":"node"
   },
 }
 
