@@ -4,20 +4,19 @@
  */
 
 var permute = function (nums) {
-    let arrange = []
-    const getArrange = (nums, arrangeItem) => {
-        if (arrangeItem.length === nums.length) {
-            arrange.push(arrangeItem)
+    let arrays = []
+    const getArray = (array) => {
+        if (nums.length === array.length) {
+            arrays.push(array)
             return
         }
-
-        for (let i = 0; i < nums.length; i++ ) {
-            if (arrangeItem.includes(nums[i])) continue
-            arrangeItem.push(nums[i])
-            getArrange(nums, [...arrangeItem])
-            arrangeItem.pop()
+        for(let i = 0; i < nums.length; i++) {
+            if (array.includes(nums[i])) continue
+            array.push(nums[i])
+            getArray([...array])
+            array.pop()
         }
     }
-    getArrange(nums, [])
-    return arrange
+    getArray([])
+    return arrays
 }

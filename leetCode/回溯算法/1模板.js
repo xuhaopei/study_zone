@@ -2,7 +2,7 @@
 
 var permute = function (xx) {
     let arrange = []
-    const getArrange = (xx, arrangeItem) => {
+    const getArrange = (arrangeItem) => {
         if (arrangeItem.length === xxxx) {
             arrange.push(arrangeItem)
             return
@@ -11,10 +11,10 @@ var permute = function (xx) {
         for (let i = xxxx; xxxxx; i++ ) {
             xxxxxx
             arrangeItem.push(nums[i])
-            getArrange(nums, [...arrangeItem])
+            getArrange([...arrangeItem])
             arrangeItem.pop()
         }
     }
-    getArrange(xxx, [], xxxx)
+    getArrange([], xxxx)
     return arrange
 }

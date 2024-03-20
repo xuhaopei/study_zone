@@ -3,15 +3,15 @@
  * @return {number[][]}
  */
 var subsets = function(nums) {
-    let arrange = []
-    const getArrange = (nums, arrangeItem, j) => {
-        arrange.push(arrangeItem)
-        for (let i = j; i < nums.length; i++) {
-            arrangeItem.push(nums[i])
-            getArrange(nums, [...arrangeItem], i + 1)
-            arrangeItem.pop()
+    let arrays = []
+    let getArray = (array, start) => {
+        arrays.push(array)
+        for(let i = start; i < nums.length; i++) {
+            array.push(nums[i])
+            getArray([...array], i + 1)
+            array.pop()
         }
     }
-    getArrange(nums, [], 0)
-    return arrange
+    getArray([], 0)
+    return arrays
 };
