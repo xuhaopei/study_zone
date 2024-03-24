@@ -1,22 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
-
 <body>
-
+    
 </body>
+<script src="./b.js"></script>
 <script>
-function a() {
-    this.b = 3;
-    console.log(this)
-}
-a();
-console.log(window.b);
+    'use strict'
+    function* helloGenneretor() {
+        console.log(111)
+        yield '111'
+        console.log(222)
+        yield '222'
+        console.log(333)
+        return '333'
+    }
+    for (const iterator of helloGenneretor()) {
+        console.log(iterator)
+    }
+    var c = 100
+    setTimeout(() => {
+        let c = import('./a.js')
+        console.log(c)
+    }, 10000);
 </script>
-
 </html>

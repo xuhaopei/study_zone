@@ -5,7 +5,7 @@
  */
 var combinationSum = function(candidates, target) {
     let array = []
-    const getArray = (item) => {
+    const getArray = (item, start) => {
         let sum = item.reduce((preSum, num) => preSum + num, 0)
         if (sum === target) {
             array.push(item)
@@ -13,12 +13,12 @@ var combinationSum = function(candidates, target) {
         if (sum > target) {
             return
         }
-        for(let i = 0; i < candidates.length; i++) {
+        for(let i = start; i < candidates.length; i++) {
             item.push(candidates[i])
-            getArray([...item])
+            getArray([...item], i)
             item.pop()
         }
     }
-    getArray([])
+    getArray([], 0)
     return array
 };
