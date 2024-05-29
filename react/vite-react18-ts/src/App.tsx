@@ -11,7 +11,13 @@ import './App.css'
 import * as React from 'react'
 import { initStore, initReducer, Context } from '@/stroe'
 function App() {
-  const [state, dispacth] = React.useReducer(initReducer, initStore)
+  // const [state, dispacth] = React.useReducer(initReducer, initStore)
+  console.log('app')
+  const [data, setData] = React.useState(1)
+
+  React.useEffect(() => {
+    setData(2)
+  }, [])
   return (
     <>
     {/* <UseContext></UseContext> */}
@@ -23,7 +29,7 @@ function App() {
     {/* <UseTransition></UseTransition> */}
     {/* <Memo></Memo> */}
     {/* <UseDebonce></UseDebonce> */}
-    <Context.Provider value={{state, dispacth}}></Context.Provider>
+    {/* <Context.Provider value={{state, dispacth}}></Context.Provider> */}
     </>
   )
 }
