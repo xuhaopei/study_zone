@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    iframe {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <iframe id="your-iframe-id"
+    src="https://checkout-test.pagsmile.com?prepay_id=S3NabkVCcGJNaGhXTHVmcS9vS2ZmZzVWTXlPUEU0U2V0eWE1dlAycDBPTT0=-4c254112"
+    frameborder="0"></iframe>
+</body>
+<script>
+  // 获取iframe元素
+  var iframe = document.getElementById('your-iframe-id')
+
+  // 监听iframe的src变化
+  // var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver
+
+  // function iframeChange(oldValue, newValue, iframeData) {
+  //   console.log("旧地址：" + oldValue)
+  //   console.log("新地址：" + newValue)
+  // }
+
+  // var observer = new MutationObserver(items => {
+  //   items.forEach(item => {
+  //     console.error(item)
+  //     iframeChange(item.oldValue, item.target.src, item.target)
+  //   })
+  // })
+
+  // var options = {
+  //   attributes: true, // 属性
+  //   attributeFilter: ["src"] // 表示需要观察的属性
+  // }
+
+
+  // observer.observe(iframe, options)
+  
+  // iframe内部的url变化
+  iframe.onload = (e) => {
+    console.log(1111111111111111111)
+  }
+</script>
+
+</html>

@@ -2,14 +2,26 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PWA入门学习</title>
-    <link rel="manifest" href="/app.webmanifest">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWA入门学习</title>
+  <link rel="manifest" href="/app.webmanifest">
+  <style>
+    div {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      word-break: break-all; 
+      text-overflow: ellipsis;
+      width: 100px;
+
+    }
+  </style>
 </head>
 
 <body>
-    PWA入门学习11
+    PWA入门学习
     <img src="/icons/512.jpg" alt="">
 
     <button onclick="handleOnLoadImg(0)">加载图片0</button>
@@ -49,5 +61,6 @@
         document.body.appendChild(imgEle)
     }
 </script>
+</body>
 
 </html>
