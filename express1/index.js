@@ -7,23 +7,7 @@ const fs = require('fs');
 const axios = require('axios');
 // 创建 application/json 解析
 var jsonParser = bodyParser.json()
-
-// 添加node反向代理
 const { createProxyMiddleware } = require('http-proxy-middleware');
-// app.use(
-//   '/express1',
-//   createProxyMiddleware({
-//     target: 'http://192.168.24.82:9002/express1',
-//     changeOrigin: true,
-//   }),
-// );
-app.use(
-  '/api',
-  createProxyMiddleware({
-    target: 'https://testservice.pooke.com/api',
-    changeOrigin: true,
-  }),
-);
 
 // 创建 application/x-www-form-urlencoded 解析
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
@@ -44,35 +28,9 @@ const getIPAdress = () => {
     }
   }
 }
-app.use(Express.static(path.resolve(__dirname,'./dist/')))
-
-app.get('/',(req,res)=>{
-  res.setHeader('Content-Type','text/html')
-  res.setHeader('Set-Cookie','username=xuhaopei')
-  res.sendFile(path.resolve(__dirname,'./dist/index.html'))
-})
-app.get('/c',(req,res)=>{
-  res.setHeader('Content-Type','text/html')
-  res.setHeader('Set-Cookie','username=xuhaopei')
-  res.sendFile(path.resolve(__dirname,'./dist/index.html'))
-})
-app.get('/heart',(req,res)=>{
-  console.log('heart')
-  res.send('heart')
-})
-app.post('/a',urlencodedParser, (req,res)=>{
-  console.log('/a', req.body)
-  res.setHeader('Content-Type','text/html')
-  res.setHeader('Set-Cookie','username=xuhaopei')
-  res.sendFile(path.resolve(__dirname,'./dist/index.html'))
-})
-app.get('/b',(req,res)=>{
-  console.log('/b',req.query)
-  res.send('hhhh')
-})
-
 // 动态生成webmanifest文件，根据参数进行动态变化。
-app.get('/askWebmanifest',(req,res)=>{
+app.get('/express1/askWebmanifest',(req,res)=>{
+  console.log('/express1/askWebmanifest')
   const stringData = JSON.stringify({
     name: "Pooke2",
     short_name: "Pooke",
@@ -91,7 +49,7 @@ app.get('/askWebmanifest',(req,res)=>{
   res.setHeader('Content-Type', 'application/manifest+json');
   res.send(stringData);
 })
-const port = 9001
+const port = 9002
 app.listen(port, () => {
     console.log(`http://${getIPAdress()}:${port}`)
 })
