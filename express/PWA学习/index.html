@@ -1,12 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PWA入门学习</title>
-    <link rel="manifest" href="/app.webmanifest">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWA入门学习</title>
+  <!-- <link rel="manifest" href="/app3.webmanifest"> -->
+  <!-- <link rel="manifest" href="/api/pooke/ask/webmanifest?op=111"> -->
+  <!-- <link rel="manifest" href="/askWebmanifest?op=222"> -->
+  <!-- <link rel="manifest" href="/express1/askWebmanifest?op=333"> -->
+  <link rel="manifest" href="/api/pooke/ask/webmanifest?op=444">
+  <style>
+    div {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      word-break: break-all; 
+      text-overflow: ellipsis;
+      width: 100px;
+    }
+  </style>
 </head>
+
 <body>
     PWA入门学习
+    <img src="/icons/512.jpg" alt="">
+
+    <button onclick="handleOnLoadImg(0)">加载图片0</button>
+    <button onclick="handleOnLoadImg(1)">加载图片1</button>
+    <button onclick="handleOnLoadImg(2)">加载图片2 3 4 5</button>
 </body>
+<script>
+    const registerServiceWorker = async () => {
+        if ("serviceWorker" in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.register("/sw.js", {
+                    scope: "/",
+                })
+                if (registration.installing) {
+                    console.log("正在安装 Service worker")
+                } else if (registration.waiting) {
+                    console.log("已安装 Service worker installed")
+                } else if (registration.active) {
+                    console.log("激活 Service worker")
+                }
+            } catch (error) {
+                console.error(`注册失败：${error}`)
+            }
+        }
+    }
+
+    // registerServiceWorker();
+
+    const imgList = [
+        'https://img2.baidu.com/it/u=4259428193,1811830338&fm=253&app=138&size=w931&n=0&f=JPEG&fmt=auto?sec=1717261200&t=8fbfd2c76aad0477824ae2e4f39504a3',
+        'https://img1.baidu.com/it/u=3625321707,2122786913&fm=253&app=138&size=w931&n=0&f=JPEG&fmt=auto?sec=1717261200&t=0d361ad1f4c3d4b8e5da0c3fea9b4fa4',
+        'https://img1.baidu.com/it/u=2881900602,1595911074&fm=253&app=138&size=w931&n=0&f=JPEG&fmt=auto?sec=1717261200&t=94a8d7200b656f3f413fa21327b2269d,'
+    ]
+    const handleOnLoadImg = (index = 1) => {
+        let imgEle = document.createElement('img')
+        imgEle.src = imgList[index]
+        document.body.appendChild(imgEle)
+    }
+</script>
+</body>
+
 </html>

@@ -25,6 +25,20 @@ app.use(
   }),
 );
 
+// 参考资料https://www.misterma.com/archives/934/
+// 设置上传文件的存储位置
+const multer = require('multer');
+const upload = multer({dest: path.join(__dirname, 'upload')});
+app.post('/upload',upload.single('file'), (req,res)=>{
+  // 获取文件信息
+  const fileInfo = req.file;
+  // 把文件重命名为原来的文件名
+  fs.renameSync(
+    fileInfo.path,
+    path.join(__dirname, 'upload', fileInfo.originalname)
+  );
+  res.redirect('/')
+})
 // 创建 application/x-www-form-urlencoded 解析
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
 
