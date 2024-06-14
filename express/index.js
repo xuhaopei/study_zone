@@ -58,7 +58,13 @@ const getIPAdress = () => {
     }
   }
 }
+
+// http://192.168.24.78:9001/index.html
 app.use(Express.static(path.resolve(__dirname,'./dist/')))
+
+// 配置下载文件的文件夹路径
+// http://192.168.24.78:9001/download/index.html
+app.use('/download',Express.static(path.resolve(__dirname,'./download/')))
 
 app.get('/',(req,res)=>{
   res.setHeader('Content-Type','text/html')
