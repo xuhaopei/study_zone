@@ -5,10 +5,9 @@
  * @format
  */
 import styles from './styles.tsx';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   Modal,
-  Alert,
   Text,
   View,
   Image,
@@ -22,6 +21,10 @@ import {
   GoogleSignin,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
+
+// 引入store相关
+import {useSelector, useDispatch} from 'react-redux';
+import {setIsShowLogin, State, setUseInfo} from 'src/store/stateModule.ts';
 
 import Apis from '../../Api/user.ts';
 // GoogleSignin.configure({
@@ -39,11 +42,11 @@ import Apis from '../../Api/user.ts';
 //   profileImageSize: 120, // [iOS] The desired height (and width) of the profile image. Defaults to 120px
 // });
 export default (): React.JSX.Element => {
-  const [modalVisible, setModalVisible] = useState(true);
-  const [zone, setZone] = useState('+86');
+  const [zone] = useState('+86');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
-
+  const state = useSelector((states: any) => states.stateModule) as State;
+  const dispatch = useDispatch();
   const handleLogin = async () => {
     let {data, message} = await Apis.accountLogin({
       account_type: 1,
@@ -53,6 +56,8 @@ export default (): React.JSX.Element => {
     });
     console.log(data);
     ToastAndroid.show(message, ToastAndroid.SHORT);
+    dispatch(setUseInfo(data));
+    dispatch(setIsShowLogin(false));
   };
   const handleSignIn = async () => {
     try {
@@ -76,15 +81,15 @@ export default (): React.JSX.Element => {
       }
     }
   };
+  useEffect(() => {
+    console.log('state1', state);
+  }, [state]);
   return (
     <Modal
       animationType="slide"
       transparent={true}
-      visible={modalVisible}
-      onRequestClose={() => {
-        Alert.alert('Modal has been closed.');
-        setModalVisible(!modalVisible);
-      }}>
+      visible={state.isShowLogin}
+      onRequestClose={() => {}}>
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
         <View style={styles.wrapper}>
           <View style={styles.container}>
