@@ -5,6 +5,11 @@ export default StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     flexDirection: 'column-reverse',
   },
+  bg: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
   container: {
     position: 'relative',
     backgroundColor: '#232227',

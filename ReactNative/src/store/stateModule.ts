@@ -44,7 +44,7 @@ export const asyncActionSetUserInfo = (params = {}) => {
           resolve(1);
         }, 3000);
       });
-      dispatch(syncActionSetUseInfo(params));
+      dispatch(asyncActionSetUserInfo(params));
     } catch (error) {
       console.error(error);
     }

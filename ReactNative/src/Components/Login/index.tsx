@@ -24,7 +24,12 @@ import {
 
 // 引入store相关
 import {useSelector, useDispatch} from 'react-redux';
-import {setIsShowLogin, State, setUseInfo} from 'src/store/stateModule.ts';
+import {
+  setIsShowLogin,
+  State,
+  setUseInfo,
+  setLoading,
+} from 'src/store/stateModule.ts';
 
 import Apis from '../../Api/user.ts';
 // GoogleSignin.configure({
@@ -48,6 +53,7 @@ export default (): React.JSX.Element => {
   const state = useSelector((states: any) => states.stateModule) as State;
   const dispatch = useDispatch();
   const handleLogin = async () => {
+    dispatch(setLoading(true));
     let {data, message} = await Apis.accountLogin({
       account_type: 1,
       nation_code: zone.replace('+', ''),
@@ -58,6 +64,7 @@ export default (): React.JSX.Element => {
     ToastAndroid.show(message, ToastAndroid.SHORT);
     dispatch(setUseInfo(data));
     dispatch(setIsShowLogin(false));
+    dispatch(setLoading(false));
   };
   const handleSignIn = async () => {
     try {
@@ -92,6 +99,10 @@ export default (): React.JSX.Element => {
       onRequestClose={() => {}}>
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
         <View style={styles.wrapper}>
+          <View
+            style={styles.bg}
+            onTouchEnd={() => dispatch(setIsShowLogin(false))}
+          />
           <View style={styles.container}>
             <Image
               style={styles.imageLogo}

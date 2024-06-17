@@ -11,5 +11,6 @@
       "src/*": ["src/*"]         
     },
     "moduleResolution":"node",
+    "noImplicitAny": false,
   },
 }

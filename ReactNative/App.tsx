@@ -6,22 +6,24 @@
  */
 
 import React from 'react';
-import {SafeAreaView, useColorScheme} from 'react-native';
 import {Provider} from 'react-redux';
-import {Colors} from 'react-native/Libraries/NewAppScreen';
 import {store} from 'src/store/index.ts';
 // 引入组件
 import Home from 'src/pages/Home/index.tsx';
+import Preview from 'src/pages/Preview';
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+
+const Stack = createNativeStackNavigator();
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
   return (
     <Provider store={store}>
-      <SafeAreaView style={backgroundStyle}>
-        <Home />
-      </SafeAreaView>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Home">
+          <Stack.Screen name="Home" component={Home} />
+          <Stack.Screen name="Preview" component={Preview} />
+        </Stack.Navigator>
+      </NavigationContainer>
     </Provider>
   );
 }
