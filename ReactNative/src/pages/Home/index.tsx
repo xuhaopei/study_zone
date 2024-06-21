@@ -7,7 +7,6 @@
 import styles from './styles.tsx';
 import React from 'react';
 import {View, Button} from 'react-native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
 // 引入store相关
 import {useSelector, useDispatch} from 'react-redux';
 import {setIsShowLogin, State} from 'src/store/stateModule.ts';
@@ -15,8 +14,9 @@ import {setIsShowLogin, State} from 'src/store/stateModule.ts';
 import Login from 'src/Components/Login';
 import Loading from 'src/Components/Loading/index.tsx';
 import HomeSetting from '../HomeSetting/index.tsx';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 
-const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 export default ({navigation}): React.JSX.Element => {
   // 引入store相关
   const state = useSelector((states: any) => states.stateModule) as State;
@@ -34,9 +34,9 @@ export default ({navigation}): React.JSX.Element => {
       <Button onPress={handleGotoPreivew} title="go to preview" />
       {state.isShowLogin && <Login />}
       <Loading />
-      <Stack.Navigator initialRouteName="HomeSetting">
-        <Stack.Screen name="HomeSetting" component={HomeSetting} />
-      </Stack.Navigator>
+      <Tab.Navigator initialRouteName="HomeSetting">
+        <Tab.Screen name="HomeSetting" component={HomeSetting} />
+      </Tab.Navigator>
     </View>
   );
 };
