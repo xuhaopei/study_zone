@@ -1,8 +1,6 @@
-const atom = {
-  cv: 'POOKE1.0.01_Web',
-  lca_lang: 'zh_CN',
-  time_zone: 'Asia / Shanghai',
-};
+
+import { userInfoRealm } from 'src/storeLocal/index.ts';
+import { UserInfo } from 'src/types';
 const query2Search = (query: {[keyName: string]: any} = {}) => {
   const keys = Object.keys(query);
   const urlItems: Array<string> = [];
@@ -18,6 +16,14 @@ interface Res {
 }
 export const get = (url: string) => {
   return async (query = {}): Promise<Res> => {
+    const userInfoString = userInfoRealm.objects('UserInfo')[0]?.data || "null"
+    const userInfo = JSON.parse(userInfoString.toString()) as UserInfo
+    const atom = {
+      cv: 'POOKE1.0.01_Web',
+      lca_lang: 'zh_CN',
+      time_zone: 'Asia / Shanghai',
+      sid: userInfo?.sid
+    }
     const newUrl =
       serviceDoMain + url + '?' + query2Search({...atom, ...query});
     let response = await fetch(newUrl, {
@@ -30,6 +36,14 @@ export const get = (url: string) => {
 
 export const post = (url: string) => {
   return async (body = {}): Promise<Res> => {
+    const userInfoString = userInfoRealm.objects('UserInfo')[0]?.data || "null"
+    const userInfo = JSON.parse(userInfoString.toString()) as UserInfo
+    const atom = {
+      cv: 'POOKE1.0.01_Web',
+      lca_lang: 'zh_CN',
+      time_zone: 'Asia / Shanghai',
+      sid: userInfo?.sid
+    }
     const newUrl = serviceDoMain + url + '?' + query2Search({...atom});
     let response = await fetch(newUrl, {
       method: 'POST',

@@ -4,6 +4,7 @@ export interface UserInfo {
   account_type: number;
   avatar: string;
   nickname: string;
+  sid: string;
   level_info: {
     [keyName: string]: any;
     icon: string;

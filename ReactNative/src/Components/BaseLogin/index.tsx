@@ -29,6 +29,8 @@ import {
   State,
   setUseInfo,
   setLoading,
+  getBalanceInfos,
+  asyncActionSetUserInfo
 } from 'src/store/stateModule.ts';
 
 import Apis from '../../Api/user.ts';
@@ -67,6 +69,7 @@ export default (): React.JSX.Element => {
     dispatch(setUseInfo(data));
     dispatch(setIsShowLogin(false));
     dispatch(setLoading(false));
+    getBalanceInfos(dispatch)
     userInfoRealm.write(() => {
       userInfoRealm.create('UserInfo', {id: 0, data: JSON.stringify(data)})
     })

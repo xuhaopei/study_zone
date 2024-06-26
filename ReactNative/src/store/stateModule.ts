@@ -1,6 +1,8 @@
-import {createSlice} from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 
-import {UserInfo, BalanceInfos} from 'src/types/index';
+import { UserInfo, BalanceInfos } from 'src/types/index';
+
+import Apis from 'src/Api/money';
 
 export interface State {
   loading: boolean;
@@ -37,7 +39,7 @@ export const stateModule = createSlice({
 });
 
 // 导出同步方法，方便react组件使用
-export const {setUseInfo, setLoading, setIsShowLogin, setBalanceInfos} = stateModule.actions;
+export const { setUseInfo, setLoading, setIsShowLogin, setBalanceInfos } = stateModule.actions;
 
 // 导出异步方法
 export const asyncActionSetUserInfo = (params = {}) => {
@@ -55,4 +57,8 @@ export const asyncActionSetUserInfo = (params = {}) => {
     }
     dispatch(setLoading(false));
   };
+};
+export const getBalanceInfos = async (dispatch) => {
+  let { data, message } = await Apis.v2WalletBalance({});
+  dispatch(setBalanceInfos(data))
 };

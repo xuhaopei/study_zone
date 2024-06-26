@@ -1,4 +1,4 @@
-import { get, post } from 'src/utils/axios'
+import { get, post } from './index'
 export default class Apis {
   
   // @errorMessageDecorator
