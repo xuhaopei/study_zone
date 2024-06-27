@@ -26,6 +26,22 @@
       target_url: 'http://192.168.24.82:9001'
     }))}`
   }
+  function isFacebookApp() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera
+    return /FBAN|FBAV|FBIOS/.test(userAgent)
+  }
+
+
+  window.onload = () => {
+
+    if (isFacebookApp()) {
+      console.log("当前网页在 Facebook 应用内打开")
+      alert('当前网页在 Facebook 应用内打开')
+    } else {
+      alert('当前网页不在 Facebook 应用内打开')
+      console.log("当前网页不在 Facebook 应用内打开")
+    }
+  }
 </script>
 
 </html>
