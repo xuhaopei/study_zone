@@ -3,44 +3,71 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta property="al:android:url" content="example://applinks" />
-  <meta property="al:android:package" content="com.example" />
-  <meta property="al:android:app_name" content="Example App" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
-  <script src="./a.js"> </script>
 </head>
 
 <body>
-  <button onclick="onGoOut()">跳转出facebook</button>
-  <form action="/upload" method="post" id="uploadForm" enctype="multipart/form-data">
-    <input type="file" id="file" name="file" />
+  <p>设置用户id：</p>
+  <button onclick="handleSetUserId('10086')">10086</button>
+  <button onclick="handleSetUserId('10010')">10010</button>
+  <button onclick="handleSetUserId('888')">888 预计后台展示为2，我在两个浏览器个点一次</button>
+  <p>设置用户属性</p>
+  <button onclick="handleSetUserProterty({zone: '广东省'})">广东省</button>
+  <button onclick="handleSetUserProterty({zone: '福建省'})">福建省</button>
+  <p>设置买上衣事件</p>
+  <button onclick="handleBuyCloth({type: '短袖T恤', price: 100, unit: '元'})">短袖T恤 100元</button>
+  <button onclick="handleBuyCloth({type: '纯棉外套', price: 200, unit: '元'})">纯棉外套 200元</button>
+  <p>设置买裤子事件</p>
+  <button onclick="handleBuyPath({type: '短裤', price: 110, unit: '元'})">短裤 110元</button>
+  <button onclick="handleBuyPath({type: '长裤', price: 150, unit: '元'})">长裤 150元</button>
 
-    <button id="submit">submit</button>
-  </form>
-  <a href="/logo.png" download="logo.png">download</a>
 </body>
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js"
+  import { getAnalytics, logEvent, setUserProperties, setUserId } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-analytics.js"
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyBFbCvxMeaNghjN7XYlamdJOf8ONS5OED0",
+    authDomain: "test-7f75e.firebaseapp.com",
+    projectId: "test-7f75e",
+    storageBucket: "test-7f75e.appspot.com",
+    messagingSenderId: "352314329264",
+    appId: "1:352314329264:web:97b63a90deb53946751375",
+    measurementId: "G-3NKG441EVK"
+  }
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig)
+  window.analytics = getAnalytics(app)
+  window.logEvent = logEvent
+  window.setUserProperties = setUserProperties
+  window.setUserId = setUserId
+</script>
 <script>
-  const onGoOut = () => {
-    window.location.href = `http://example.com/applinks?al_applink_data=${encodeURIComponent(JSON.stringify({
-      target_url: 'http://192.168.24.82:9001'
-    }))}`
+
+  var handleSetUserId = (data) => {
+    console.log('用户Id：', data)
+    setUserId(analytics, data)
   }
-  function isFacebookApp() {
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera
-    return /FBAN|FBAV|FBIOS/.test(userAgent)
+  var handleSetUserProterty = (data) => {
+    console.log('用户属性：', data)
+    setUserProperties(analytics, data)
   }
-
-
-  window.onload = () => {
-
-    if (isFacebookApp()) {
-      console.log("当前网页在 Facebook 应用内打开")
-      alert('当前网页在 Facebook 应用内打开')
-    } else {
-      alert('当前网页不在 Facebook 应用内打开')
-      console.log("当前网页不在 Facebook 应用内打开")
-    }
+  var handleBuyCloth = (data) => {
+    let eid = '买衣服'
+    console.log('事件上报：', eid, 'data', data)
+    logEvent(analytics, eid, data)
+  }
+  var handleBuyPath = (data) => {
+    let eid = '买裤子'
+    console.log('事件上报：', eid, 'data', data)
+    logEvent(analytics, eid, data)
   }
 </script>
 
