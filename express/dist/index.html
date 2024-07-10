@@ -11,7 +11,7 @@
   <p>设置用户id：</p>
   <button onclick="handleSetUserId('10086')">10086</button>
   <button onclick="handleSetUserId('10010')">10010</button>
-  <button onclick="handleSetUserId('888')">888 预计后台展示为2，我在两个浏览器个点一次</button>
+  <button onclick="handleSetUserId('888')">888</button>
   <p>设置用户属性</p>
   <button onclick="handleSetUserProterty({zone: '广东省'})">广东省</button>
   <button onclick="handleSetUserProterty({zone: '福建省'})">福建省</button>
@@ -21,6 +21,17 @@
   <p>设置买裤子事件</p>
   <button onclick="handleBuyPath({type: '短裤', price: 110, unit: '元'})">短裤 110元</button>
   <button onclick="handleBuyPath({type: '长裤', price: 150, unit: '元'})">长裤 150元</button>
+  <p>全英文效果看看有没有值</p>
+  <p>设置用户属性</p>
+  <button onclick="handleSetUserProterty({zone: 'guang_dong'})">guangDong</button>
+  <button onclick="handleSetUserProterty({zone: 'fu_jian'})">fu_jian</button>
+  <p>设置买上衣事件，设置触发2次</p>
+  <button onclick="handleBuyCloth_({type_: 't_shift', price_: 100, unit_: 'yuan'})">t_shift 100yuan</button>
+  <button onclick="handleBuyCloth_({type_: 'wai_tao', price_: 200, unit_: 'yuan'})">wai_tao 200yuan</button>
+  <p>设置买裤子事件，设置触发2次</p>
+  <button onclick="handleBuyPath_({type_: 'duan_ku', price_: 110, unit_: 'yuan'})">duan_ku 110yuan</button>
+  <button onclick="handleBuyPath_({type_: 'chang_ku', price_: 150, unit_: 'yuan'})">chang_ku 150yuan</button>
+
 
 </body>
 <script type="module">
@@ -66,6 +77,16 @@
   }
   var handleBuyPath = (data) => {
     let eid = '买裤子'
+    console.log('事件上报：', eid, 'data', data)
+    logEvent(analytics, eid, data)
+  }
+  var handleBuyCloth_ = (data) => {
+    let eid = 'BuyCloth_'
+    console.log('事件上报：', eid, 'data', data)
+    logEvent(analytics, eid, data)
+  }
+  var handleBuyPath_ = (data) => {
+    let eid = 'BuyPath_'
     console.log('事件上报：', eid, 'data', data)
     logEvent(analytics, eid, data)
   }
