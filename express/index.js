@@ -71,25 +71,6 @@ app.get('/',(req,res)=>{
   res.setHeader('Set-Cookie','username=xuhaopei')
   res.sendFile(path.resolve(__dirname,'./dist/index.html'))
 })
-app.get('/c',(req,res)=>{
-  res.setHeader('Content-Type','text/html')
-  res.setHeader('Set-Cookie','username=xuhaopei')
-  res.sendFile(path.resolve(__dirname,'./dist/index.html'))
-})
-app.get('/heart',(req,res)=>{
-  console.log('heart')
-  res.send('heart')
-})
-app.post('/a',urlencodedParser, (req,res)=>{
-  console.log('/a', req.body)
-  res.setHeader('Content-Type','text/html')
-  res.setHeader('Set-Cookie','username=xuhaopei')
-  res.sendFile(path.resolve(__dirname,'./dist/index.html'))
-})
-app.get('/b',(req,res)=>{
-  console.log('/b',req.query)
-  res.send('hhhh')
-})
 
 // 动态生成webmanifest文件，根据参数进行动态变化。
 app.get('/askWebmanifest',(req,res)=>{

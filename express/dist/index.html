@@ -8,67 +8,19 @@
 </head>
 
 <body>
-  <p>设置用户id：</p>
-  <button onclick="handleSetUserId('10086')">10086</button>
-  <button onclick="handleSetUserId('10010')">10010</button>
-  <button onclick="handleSetUserId('888')">888</button>
-  <p>设置用户属性</p>
-  <button onclick="handleSetUserProterty({zone: '广东省'})">广东省</button>
-  <button onclick="handleSetUserProterty({zone: '福建省'})">福建省</button>
-  <p>设置买上衣事件</p>
-  <button onclick="handleBuyCloth({type: '短袖T恤', price: 100, unit: '元'})">短袖T恤 100元</button>
-  <button onclick="handleBuyCloth({type: '纯棉外套', price: 200, unit: '元'})">纯棉外套 200元</button>
-  <p>设置买裤子事件</p>
-  <button onclick="handleBuyPath({type: '短裤', price: 110, unit: '元'})">短裤 110元</button>
-  <button onclick="handleBuyPath({type: '长裤', price: 150, unit: '元'})">长裤 150元</button>
-
 
 </body>
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js"
-  import { getAnalytics, logEvent, setUserProperties, setUserId } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-analytics.js"
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyBFbCvxMeaNghjN7XYlamdJOf8ONS5OED0",
-    authDomain: "test-7f75e.firebaseapp.com",
-    projectId: "test-7f75e",
-    storageBucket: "test-7f75e.appspot.com",
-    messagingSenderId: "352314329264",
-    appId: "1:352314329264:web:97b63a90deb53946751375",
-    measurementId: "G-3NKG441EVK"
-  }
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig)
-  window.analytics = getAnalytics(app)
-  window.logEvent = logEvent
-  window.setUserProperties = setUserProperties
-  window.setUserId = setUserId
-</script>
 <script>
+  const ajax = new XMLHttpRequest()
 
-  var handleSetUserId = (data) => {
-    console.log('用户Id：', data)
-    setUserId(analytics, data)
-  }
-  var handleSetUserProterty = (data) => {
-    console.log('用户属性：', data)
-    setUserProperties(analytics, data)
-  }
-  var handleBuyCloth = (data) => {
-    let eid = '买衣服'
-    console.log('事件上报：', eid, 'data', data)
-    logEvent(analytics, eid, data)
-  }
-  var handleBuyPath = (data) => {
-    let eid = '买裤子'
-    console.log('事件上报：', eid, 'data', data)
-    logEvent(analytics, eid, data)
+  window.onload = () => {
+    fetch("https://service.pooke.com/api/game_hall/game_by_tab?cv=POOKE1.0.01_Web&lca_lang=en&deviceid=Web_1719200225151979171&locale=MX&currency=MXN&time_zone=Asia%2FShanghai&page_size=10&cursor=1&tab_key=Pooke_Popular")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.code === 507) {
+          window.location.href = `https://www.pooke.com/pages/limit/index.html`
+        }
+      })
   }
 </script>
 
