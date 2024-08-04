@@ -1,10 +1,10 @@
-const version = 'v10'
+const version = 'v11'
 
-// 要求立即激活新的sw代码，如果不这么做的话，网页会一直使用旧的sw代码，这是更新sw的关键。
+// 要求立即激活新的sw代码，如果不这么做的话,在浏览器完全关闭之前，就算刷新网页也会一直使用旧的sw，这是立即更新sw的关键，否则。
 skipWaiting()
 
 // install 事件会在注册成功完成之后触发. install 事件通常会这样用，将离线运行 app 产生的资源放置在浏览器离线缓存的空间。
-// 当再次打开此网站的时候，因为sw已经注册完成了，不会再次触发了。
+// 当再次打开此网站的时候，因为此sw已经注册完成了，不会再次触发了。
 self.addEventListener("install", event => {
     const addResourcesToCache = async (resources) => {
         const cache = await caches.open(version)
