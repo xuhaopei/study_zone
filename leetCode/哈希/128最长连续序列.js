@@ -4,17 +4,19 @@
  */
 var longestConsecutive = function(nums) {
     let set = new Set()
-    nums.forEach(sum => set.add(sum))
-    let max = 0
-    for (const num of set) {
-        if (set.has(num - 1)) continue  // 判断当前遍历元素是不是第一个计数的元素，不是则跳过
-        let currentMax = 0
-        let crrrentNum = num
-        while(set.has(crrrentNum)) {
-            currentMax++
-            crrrentNum++
+    nums.forEach((val) => set.add(val))
+
+    let max = 0;
+    for (const val of set) {
+        if (set.has(val - 1)) continue;
+
+        let currentVal = val;
+        let currentCount = 0;
+        while (set.has(currentVal)) {
+            currentVal++
+            currentCount++   
         }
-        max = Math.max(max, currentMax)
+        max = Math.max(max, currentCount)
     }
     return max
 };

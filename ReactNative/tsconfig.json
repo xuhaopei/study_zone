@@ -1,0 +1,17 @@
+{
+  "extends": "@react-native/typescript-config/tsconfig.json",
+  "compilerOptions": {
+    "module": "es2020",
+    "target": "ES2016",
+    "jsx": "react",
+    "baseUrl": "./",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports":true,
+    "paths": {
+      "src/*": ["src/*"]         
+    },
+    "moduleResolution":"node",
+    "noImplicitAny": false,
+    "noUnusedLocals": false,
+  },
+}
