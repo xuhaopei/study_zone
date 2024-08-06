@@ -14,10 +14,16 @@ function App() {
   // const [state, dispacth] = React.useReducer(initReducer, initStore)
   console.log('app')
   const [data, setData] = React.useState(1)
-
+  const [hegiht, setHeight] = React.useState(100)
+  const ele = React.useRef<HTMLDivElement>(null)
   React.useEffect(() => {
-    setData(2)
+    console.log('useEffect',ele.current.getBoundingClientRect())
+    ele.current.style.height = '200px'
   }, [])
+  React.useLayoutEffect(() => {
+    console.log('useLayoutEffect',ele.current.getBoundingClientRect())
+    ele.current.style.height = '200px'
+  }, [hegiht])
   return (
     <>
     {/* <UseContext></UseContext> */}
@@ -30,6 +36,7 @@ function App() {
     {/* <Memo></Memo> */}
     {/* <UseDebonce></UseDebonce> */}
     {/* <Context.Provider value={{state, dispacth}}></Context.Provider> */}
+    <div style={{height: `${hegiht}px`, background: 'red', width: '100px'}} ref={ele}></div>
     </>
   )
 }
