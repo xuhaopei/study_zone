@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+</body>
+<script>
+    // Promise.all的并发题目
+    let urls = [
+        'https://testwww.pooke.com/24faa2f6426d5a2520b9.svg',
+        'https://img.pooke.com/MTcxNjUzMTM1MjE0NCMgNDUjcG5n.png',
+        'https://img.pooke.com/MTcxNjgwNjMwMTQzMSMxNzYjcG5n.png',
+        'https://img.pooke.com/MTcxNjUzMTM1Mjc3MyM2MjcjcG5n.png',
+        'https://img.pooke.com/MTcxNjgwNjMwMDgwOCMyNjMjcG5n.png',
+        'https://media.pooke.com/MTcxMTUxMjg1NDI1MSM2MzEjLmF2aWY=..avif',
+        'https://media.pooke.com/MTcxMTYwNzQ2OTE2NyM5MDMjYXZpZg==.avif',
+        'https://img.pooke.com/MTcxMTUxMTkwOTc1MyM3MjYjanBn.jpg',
+        'https://img.pooke.com/MTcxMTUxMjc0ODUxNCMzNTAjcG5n.png',
+    ]
+    const loadImg = (url) => {
+        let img = new Image()
+        img.src = url
+
+        return new Promise((res, rej) => {
+            img.onload = () => {
+                console.log('加载完成', url)
+                res(url)
+            }
+            img.onerror = () => {
+                rej(url)
+            }
+            const maxTime = 4 * 1000
+            setTimeout(() => {
+                rej(url)
+            }, maxTime)
+        })
+    }
+    // const limitLoad = (size) => {
+    //     return new Promise((res, rej) => {
+    //         const copyUrls = [...urls]
+    //         const loadErrorUrls = []
+    //         const load = () => {
+    //             if (copyUrls.length > 0) {
+    //                 Promise.all([...copyUrls.splice(0, size).map(url => loadImg(url))])
+    //                     .then(() => {
+    //                     })
+    //                     .catch((url) => {
+    //                         loadErrorUrls.push(url)
+    //                     })
+    //                     .finally(() => {
+    //                         load()
+    //                     })
+    //             } else {
+    //                 res(loadErrorUrls)
+    //             }
+    //         }
+    //         load()
+    //     })
+    // }
+    // limitLoad(5).then((loadErrorUrls) => {
+    //     console.log('未加载的图片', loadErrorUrls)
+    // })
+
+    // 自己实现Promise.all的题目
+    // const myPromiseAll = (listPromise = []) => {
+    //     return new Promise((res, rej) => {
+    //         let hasPromisedSize = 0
+    //         let resultPromiseList = []
+    //         listPromise.forEach((ele, i) => {
+    //             ele.then((data) => {
+    //                 resultPromiseList[i] = data
+    //                 hasPromisedSize++
+    //                 if (hasPromisedSize >= listPromise.length) {
+    //                     res[resultPromiseList]
+    //                 }
+    //             }).catch((err) => {
+    //                 rej(err)
+    //             })
+    //         })
+    //     })
+    // }
+
+    // const limitLoad1 = (size) => {
+    //     return new Promise((res, rej) => {
+    //         const copyUrls = [...urls]
+    //         const loadErrorUrls = []
+    //         const load = () => {
+    //             if (copyUrls.length > 0) {
+    //                 myPromiseAll([...copyUrls.splice(0, size).map(url => loadImg(url))])
+    //                     .then(() => {
+    //                     })
+    //                     .catch((url) => {
+    //                         loadErrorUrls.push(url)
+    //                     })
+    //                     .finally(() => {
+    //                         load()
+    //                     })
+    //             } else {
+    //                 res(loadErrorUrls)
+    //             }
+    //         }
+    //         load()
+    //     })
+    // }
+    // limitLoad1(5).then((loadErrorUrls) => {
+    //     console.log('未加载的图片', loadErrorUrls)
+    // })
+    // Promise.allSettled(urls.map((url) => loadImg(url))).then((data) => {
+    //     console.log(data)
+    // })
+    // const myPromiseAllSettled = (listPromise = []) => {
+    //     return  new Promise((res, rej) => {
+    //         if (listPromise.length == 0) res([])
+    //         let hasGetStatusSide = 0
+    //         let resultList = []
+    //         listPromise.forEach((p, i) => {
+    //             p
+    //             .then((data) => {
+    //                 resultList[i] = {
+    //                     status: 'fulfilled',
+    //                     value: data
+    //                 }
+    //             })
+    //             .catch((data) => {
+    //                 resultList[i] = {
+    //                     status: 'reject',
+    //                     reason: data
+    //                 }
+    //             })
+    //             .finally(() => {
+    //                 hasGetStatusSide++
+    //                 if (hasGetStatusSide >= listPromise.length) {
+    //                     res(resultList)
+    //                 }
+
+    //             })
+    //         })
+    //     })
+    // }
+    // myPromiseAllSettled(urls.map((url) => loadImg(url))).then((data) => {
+    //     console.log(data)
+    // })
+    const p1 = Promise.reject(0)
+    const p2 = Promise.reject(1)
+    const p3 = Promise.resolve(2)
+
+    Promise.any([p1,p2,p3]).then((data) => console.log(data)).catch((data) => console.log(data))
+
+    const myPromiseRace = ((listPromise = []) => {
+        return new Promise ((res, rej) => {
+            let hasGetStatusSize = 0
+            listPromise.forEach((p, i) => {
+                p.then((data) => {
+                    res(data)
+                }).catch((data) => {
+                    hasGetStatusSize++
+                    if (hasGetStatusSize >= listPromise.length) {
+                        rej("AggregateError: All promises were rejected")
+                    }
+                })
+            })
+        })
+    })
+
+    myPromiseRace([p1,p2,p3]).then((data) => console.log(data)).catch((data) => console.log(data))
+</script>
+
+</html>
