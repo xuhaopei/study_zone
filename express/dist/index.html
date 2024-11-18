@@ -169,6 +169,9 @@
     })
 
     myPromiseRace([p1,p2,p3]).then((data) => console.log(data)).catch((data) => console.log(data))
+    window.onload = () => {
+        alert(navigator.userAgent)
+    }
 </script>
 
 </html>
