@@ -10,14 +10,17 @@
     <button onclick="clearMemoryForArray()">清除数组内存</button>
     <button onclick="beginAddMemoryForObj()">给对象增加内存</button>
     <button onclick="clearMemoryForObj()">清除对象内存</button>
+    <button onclick="beginAddMemoryForMap()">给map对象增加内存</button>
+    <button onclick="clearMemoryForMap()">清除map对象内存</button>
     <button onclick="addBibaoMemory()">点击给闭包添加内存</button>
     <button onclick="addBibaoMemory2()">点击给闭包添加内存</button>
     <button onclick="deleteVarUseBibao()">删除引用闭包的变量</button>
 </body>
 <script>
     let datas = []
-    let obj = {}
+    let obj1 = {}
     let timer = 0
+    let map1 = new Map()
     function beginAddMemoryForArray() {
         alert('开始数组增加内存')
         timer = setInterval(() => {
@@ -29,8 +32,16 @@
         alert('开始对象增加内存')
         timer = setInterval(() => {
             let items = new Array(1000000).fill(1)
-            obj[new Date().getTime() + '_'] = items
-            console.log(obj)
+            obj1[new Date().getTime() + '_'] = items
+            console.log(obj1)
+        }, 1000)
+    }
+    function beginAddMemoryForMap() {
+        alert('开始map对象增加内存')
+        timer = setInterval(() => {
+            let items = new Array(1000000).fill(1)
+            map1.set(new Date().getTime() + '_', {list: items})
+            console.log(map1)
         }, 1000)
     }
     function clearMemoryForArray() {
@@ -40,8 +51,26 @@
     }
     function clearMemoryForObj() {
         alert('清除对象内存')
-        // obj = {} 
-        Object.keys(obj).forEach((key) => delete obj[key]) // 通过google任务管理器可以发现：清除对象内存，需要通过delete 删除对象的key 才能清除， 重新赋值 obj = {} 是没有效果的。
+        // obj1 = {} 
+        Object.keys(obj1).forEach((key) => delete obj1[key]) // 通过google任务管理器可以发现：清除对象内存，需要通过delete 删除对象的key 才能清除， 重新赋值 obj1 = {} 或者 obj1 = null 是没有效果的。
+        clearInterval(timer)
+    }
+    function clearMemoryForMap() {
+        alert('清除map对象内存')
+        // 通过google任务管理器可以发现: 这种清除内存效果不行
+        // for (const key of map1.keys()) {
+        //     map1.delete(key)
+        // }
+
+        // 通过google任务管理器可以发现: 这种清除内存效果不行
+        //map1.clear()
+
+        // 通过google任务管理器可以发现: 这种清除内存效果可行
+        for (const obj1 of map1.values()) {
+            Object.keys(obj1).forEach((key) => delete obj1[key])
+        }
+        
+        console.log('map1', map1)
         clearInterval(timer)
     }
     function fatherOfBibao() {
