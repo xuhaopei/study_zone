@@ -3,16 +3,20 @@
     <p>This is <strong>strong text with <em>emphasis</em></strong></p>
     <mark>123</mark>
     <div class="callout">hhhh</div>
+    <span style="color: red">123</span>
+    <span class="test1" style="color: yellow">123</span>
   </div>
   <div class="editor" ref="editor"></div>
   <div @click="addLink" @mousedown.prevent>添加link</div>
   <div class="toolbar">
     <!-- 阻止 mousedown 默认行为：避免点击控件时抢走编辑器焦点导致选区丢失 -->
     <input type="color" v-model="currentColor" @mousedown.prevent />
-    <button @mousedown.prevent @click="setColor">设置字体颜色</button>
+    <button @click="setColor">setColor</button>
     <button @mousedown.prevent @click="setUnderLink">setUnderLink</button>
     <button @mousedown.prevent @click="setHeading1">setHeading1</button>
     <button @mousedown.prevent @click="setP">setP</button>
+    <button @mousedown.prevent @click="delChart">delChart</button>
+    <button @mousedown.prevent @click="addEmptyInlineNode">addEmptyInlineNode</button>
   </div>
 </template>
 <script setup lang="ts">
@@ -88,19 +92,36 @@ onMounted(() => {
         }
       }],
   }
-
+  const inlineEmptyNode: NodeSpec = {
+      content: "text*",
+      group: "inline",
+      inline: true,
+      atom: true, 
+      attrs: {},
+      toDOM(node): DOMOutputSpec {
+        const spanNode = document.createElement('span')
+        return {
+          dom: spanNode,
+        }
+      },
+      parseDOM: [{
+        tag: "span.empty",
+        getAttrs: (dom: string | HTMLElement) => {
+          return null
+        }
+      }],
+  }
   // 字体颜色 mark：把选中文本包成 <span style="color:xxx">
   const colorMark: MarkSpec = {
     attrs: {
       color: { default: "#ff0000" }
     },
-    // 同一段文本可叠加 strong/em 等其它 mark，所以不设 excludes
-    inclusive: true,
     parseDOM: [
       {
         // 解析带有 color 内联样式的 <span>
-        tag: "span",
+        tag: "span.test1",
         getAttrs: (dom: string | HTMLElement) => {
+          console.log('phx colorMark parseDOM', dom)
           if (typeof dom === "string") return false
           const color = dom.style.color
           // 没有 color 样式则不命中此规则，返回 false
@@ -109,6 +130,7 @@ onMounted(() => {
       },
     ],
     toDOM(mark): DOMOutputSpec {
+      console.log('phx')
       return ["span", { style: `color: ${mark.attrs.color}` }, 0]
     }
   }
@@ -118,30 +140,31 @@ onMounted(() => {
       return ["u", {}, 0]
     }
   }
-
-  // 架构中得state
-  const state = EditorState.create({
-    // 文档结构定义， 
-    schema: new Schema({
+  const schemaCustom = new Schema({
       nodes: {
         ...basicNodes,
-        customLink: customLinkNode
+        customLink: customLinkNode,
+        inlineEmpty: inlineEmptyNode,
       },
       marks: {
         ...basicMarks,
         color: colorMark,
         underLink: underLinkMark
       },
-    }),
-    // 插件，用于扩展编辑器功能，如历史记录、快捷键等。
-    plugins: [
+  })
+  const pluginsCustom = [
       // history(),
       // keymap({ "Mod-z": undo, "Mod-y": redo }),
       keymap(baseKeymap),
       ...plugins,
-    ],
-    // doc:doc1,
-    
+  ]
+  // 架构中得state
+  const state = EditorState.create({
+    // 文档结构定义， 
+    schema: schemaCustom,
+    // 插件，用于扩展编辑器功能，如历史记录、快捷键等。
+    plugins: pluginsCustom,
+    doc: DOMParser.fromSchema(schemaCustom).parse(doc.value),
   })
 
   // 架构中的view
@@ -169,8 +192,10 @@ const setColor = () => {
   const { state, dispatch } = editorView
   const { tr, selection } = state
   const { from, to, empty} = selection
-  const markType = state.schema.marks.color
-  const colorMark =  markType.create({ color: currentColor.value })
+  const markType = state.schema.marks.color;
+  const colors = ['yellow', 'red', 'blue']
+  const randomColor = colors[Math.floor(Math.random() * 3)]
+  const colorMark =  markType.create({ color: randomColor })
   if (empty) {
     // 无选区（光标状态）：先清掉旧的 color mark，再加新颜色
     // 需要先把已有的同类型 color mark 从 storedMarks 中移除，避免叠加
@@ -204,6 +229,7 @@ const setHeading1 = () => {
   
   const { state, dispatch } = editorView
   const { from, to } = state.selection
+  console.log('phx', from, to)
   const headingType = state.schema.nodes.heading
   const tr = state.tr.setBlockType(from, to, headingType, { level: 1 })
   dispatch(tr)
@@ -217,6 +243,29 @@ const setP = () => {
   const tr = state.tr.setBlockType(from, to, headingType, { })
   dispatch(tr)
 
+}
+
+const delChart = () => {
+  const { state, dispatch } = editorView
+  const { $from } = state.selection
+}
+
+const addEmptyInlineNode = () => {
+  const { state, dispatch } = editorView
+  const { tr, selection } = state
+  const { from, to, empty, $from, $to } = selection
+  if (empty) {
+    const inlineEmptyNodeType = state.schema.nodes.inlineEmpty
+    
+    const markType = state.schema.marks.color
+    const colorMark =  markType.create({ color: 'yellow' })
+    const node = inlineEmptyNodeType.create()
+    const existing = state.storedMarks ?? state.selection.$from.marks()
+    const filtered = existing.filter(m => m.type !== markType)
+    tr.setStoredMarks([...filtered, colorMark])
+    tr.replaceSelectionWith(node)
+    dispatch(tr)
+  }
 }
 </script>
 <style scoped>
