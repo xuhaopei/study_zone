@@ -1,0 +1,24 @@
+{
+  "name": "req-optimizer",
+  "version": "1.0.0",
+  "description": "学习 Agent 项目：基于 DeepSeek 的需求文档优化工具",
+  "main": "src/hello.ts",
+  "scripts": {
+    "hello": "ts-node src/hello.ts",
+    "optimize": "ts-node src/optimize.ts",
+    "chat": "ts-node src/chat.ts",
+    "build": "tsc"
+  },
+  "keywords": ["agent", "deepseek", "llm", "requirement"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "openai": "^4.52.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

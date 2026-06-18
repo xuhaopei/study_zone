@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+*.log
+.DS_Store
+
+# RAG 索引（每次 ingest 自动重建，不入仓）
+knowledge.index.json
