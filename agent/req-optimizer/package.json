@@ -7,6 +7,7 @@
     "hello": "ts-node src/hello.ts",
     "optimize": "ts-node src/optimize.ts",
     "chat": "ts-node src/chat.ts",
+    "agent": "ts-node src/agent.ts",
     "build": "tsc"
   },
   "keywords": ["agent", "deepseek", "llm", "requirement"],
