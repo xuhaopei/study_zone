@@ -69,6 +69,35 @@ const SAMPLE = `做一个用户登录功能。
 最好能支持手机号登录。
 首页弹出提示信息。`;
 
+// ===== 评审 Agent 相关类型 =====
+type ReviewDimension = {
+  key: string;
+  label: string;
+  score: number;
+  comment: string;
+};
+
+type SectionReview = {
+  section: string;
+  good?: string;
+  issues?: string[];
+};
+
+type ReviewResult = {
+  overall: { score: number; verdict: string; summary: string };
+  dimensions: ReviewDimension[];
+  section_reviews: SectionReview[];
+  suggestions: string[];
+};
+
+// ===== 模型选项类型（与 /api/models 响应一致） =====
+type ModelOption = {
+  id: string;
+  label: string;
+  description: string;
+  configured: boolean;
+};
+
 export default function HomePage() {
   const [input, setInput] = useState('');
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
@@ -81,6 +110,36 @@ export default function HomePage() {
   } | null>(null);
   const [savedDoc, setSavedDoc] = useState<{ filename: string; markdown: string } | null>(null);
   const [trace, setTrace] = useState<unknown[] | null>(null);
+
+  // 评审 Agent 状态
+  const [reviewRunning, setReviewRunning] = useState(false);
+  const [reviewRawText, setReviewRawText] = useState(''); // 流式拼接的原始 JSON 文本
+  const [reviewResult, setReviewResult] = useState<ReviewResult | null>(null);
+  const [reviewError, setReviewError] = useState('');
+
+  // 模型选择（全局共用：作者 + 评审 同一个）
+  const [models, setModels] = useState<ModelOption[]>([]);
+  const [modelId, setModelId] = useState<string>('');
+
+  // 首次加载拉取可用模型列表
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/models');
+        if (!res.ok) return;
+        const data = (await res.json()) as { models: ModelOption[]; defaultId: string };
+        if (cancelled) return;
+        setModels(data.models);
+        setModelId(data.defaultId);
+      } catch {
+        // 模型列表失败不影响主体功能：后端 resolveModel 会用 default fallback
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -99,6 +158,11 @@ export default function HomePage() {
     setSummary(null);
     setSavedDoc(null);
     setTrace(null);
+    // 重置评审 Agent 状态（重新发起需求时清空上一次评审）
+    setReviewRunning(false);
+    setReviewRawText('');
+    setReviewResult(null);
+    setReviewError('');
 
     // user 气泡
     setBubbles((b) => [...b, { kind: 'user', text: input }]);
@@ -109,7 +173,7 @@ export default function HomePage() {
       const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userInput }),
+        body: JSON.stringify({ userInput, modelId }),
       });
       if (!res.ok || !res.body) throw new Error((await res.text()) || `HTTP ${res.status}`);
 
@@ -284,6 +348,67 @@ export default function HomePage() {
     }
   }
 
+  /** 提交评审：调 /api/review 流式接收 review JSON */
+  async function handleSubmitReview() {
+    if (!savedDoc || reviewRunning) return;
+
+    setReviewRunning(true);
+    setReviewRawText('');
+    setReviewResult(null);
+    setReviewError('');
+
+    try {
+      const res = await fetch('/api/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markdown: savedDoc.markdown, modelId }),
+      });
+      if (!res.ok || !res.body) throw new Error((await res.text()) || `HTTP ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buf = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+
+        let nl: number;
+        while ((nl = buf.indexOf('\n')) !== -1) {
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (!line) continue;
+
+          let evt:
+            | { type: 'start'; model: string }
+            | { type: 'delta'; text: string }
+            | { type: 'parsed'; review: ReviewResult }
+            | { type: 'error'; message: string }
+            | { type: 'done'; elapsedMs: number; totalChars: number };
+
+          try {
+            evt = JSON.parse(line);
+          } catch {
+            continue;
+          }
+
+          if (evt.type === 'delta') {
+            setReviewRawText((prev) => prev + evt.text);
+          } else if (evt.type === 'parsed') {
+            setReviewResult(evt.review);
+          } else if (evt.type === 'error') {
+            setReviewError(evt.message);
+          }
+        }
+      }
+    } catch (e) {
+      setReviewError((e as Error).message || '评审失败');
+    } finally {
+      setReviewRunning(false);
+    }
+  }
+
   function downloadFile(filename: string, content: string, mime: string) {
     const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
@@ -306,6 +431,29 @@ export default function HomePage() {
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs">
+            {/* 模型选择 */}
+            {models.length > 0 && (
+              <label className="flex items-center gap-1.5 text-slate-600 mr-2">
+                <span className="text-slate-500">模型</span>
+                <select
+                  value={modelId}
+                  onChange={(e) => setModelId(e.target.value)}
+                  disabled={running || reviewRunning}
+                  className="border rounded-md px-2 py-1 text-xs bg-white hover:border-brand-500 focus:outline-none focus:border-brand-500 disabled:opacity-50"
+                  title={
+                    models.find((m) => m.id === modelId)?.description ||
+                    '选择当前会话使用的 LLM'
+                  }
+                >
+                  {models.map((m) => (
+                    <option key={m.id} value={m.id} disabled={!m.configured}>
+                      {m.label}
+                      {!m.configured ? '（未配置）' : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             {savedDoc && (
               <button
                 onClick={() => downloadFile(savedDoc.filename, savedDoc.markdown, 'text/markdown;charset=utf-8')}
@@ -369,7 +517,23 @@ export default function HomePage() {
             </div>
           )}
 
-          {savedDoc && <SavedDocCard doc={savedDoc} />}
+          {savedDoc && (
+            <SavedDocCard
+              doc={savedDoc}
+              reviewRunning={reviewRunning}
+              hasReview={!!reviewResult || !!reviewRawText}
+              onSubmitReview={handleSubmitReview}
+            />
+          )}
+
+          {(reviewRunning || reviewRawText || reviewResult || reviewError) && (
+            <ReviewCard
+              running={reviewRunning}
+              raw={reviewRawText}
+              result={reviewResult}
+              error={reviewError}
+            />
+          )}
         </div>
       </div>
 
@@ -541,14 +705,33 @@ function ToolCallView({ tool }: { tool: ToolBubble }) {
   );
 }
 
-function SavedDocCard({ doc }: { doc: { filename: string; markdown: string } }) {
+function SavedDocCard({
+  doc,
+  reviewRunning,
+  hasReview,
+  onSubmitReview,
+}: {
+  doc: { filename: string; markdown: string };
+  reviewRunning: boolean;
+  hasReview: boolean;
+  onSubmitReview: () => void;
+}) {
   return (
     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 gap-3">
         <h3 className="text-sm font-semibold text-emerald-800">
           📄 模型提交的最终文档：{doc.filename}
         </h3>
-        <span className="text-xs text-emerald-700">{doc.markdown.length} 字符</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-emerald-700">{doc.markdown.length} 字符</span>
+          <button
+            onClick={onSubmitReview}
+            disabled={reviewRunning}
+            className="px-3 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-700 disabled:opacity-50"
+          >
+            {reviewRunning ? '评审中…' : hasReview ? '🔁 重新评审' : '📝 提交评审'}
+          </button>
+        </div>
       </div>
       <details>
         <summary className="cursor-pointer text-xs text-emerald-700 hover:underline">
@@ -558,6 +741,161 @@ function SavedDocCard({ doc }: { doc: { filename: string; markdown: string } }) 
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{doc.markdown}</ReactMarkdown>
         </div>
       </details>
+    </div>
+  );
+}
+
+// ===== 评审结果卡片 =====
+function ReviewCard({
+  running,
+  raw,
+  result,
+  error,
+}: {
+  running: boolean;
+  raw: string;
+  result: ReviewResult | null;
+  error: string;
+}) {
+  const verdictMeta: Record<string, { label: string; bg: string; text: string }> = {
+    approved: { label: '✅ 通过', bg: 'bg-emerald-500', text: 'text-white' },
+    needs_revision: { label: '⚠️ 需修改', bg: 'bg-amber-500', text: 'text-white' },
+    rejected: { label: '❌ 不通过', bg: 'bg-red-500', text: 'text-white' },
+  };
+
+  return (
+    <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-violet-800">🧑‍⚖️ 评审 Agent</h3>
+        {running && (
+          <span className="text-xs text-violet-600 flex items-center gap-1">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></span>
+            正在评审… 已收 {raw.length} 字符
+          </span>
+        )}
+      </div>
+
+      {error && (
+        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+          ❌ {error}
+        </div>
+      )}
+
+      {/* 原始 JSON 流（折叠，便于看模型写） */}
+      {raw && (
+        <details className="bg-white border rounded">
+          <summary className="cursor-pointer px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">
+            🔤 模型原始 JSON 输出（{raw.length} 字符）
+          </summary>
+          <pre className="text-[11px] bg-slate-900 text-slate-100 p-2 rounded-b max-h-60 overflow-auto scrollbar-thin whitespace-pre-wrap break-words">
+            {raw + (running ? '▍' : '')}
+          </pre>
+        </details>
+      )}
+
+      {/* 解析成功后的结构化卡片 */}
+      {result && (
+        <>
+          {/* 总分 */}
+          <div className="bg-white border rounded-lg p-3 flex items-center gap-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-violet-700">
+                {result.overall.score}
+                <span className="text-base text-slate-400">/10</span>
+              </div>
+              <div className="text-[11px] text-slate-500 mt-0.5">总分</div>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span
+                  className={
+                    'text-xs font-medium px-2 py-0.5 rounded ' +
+                    (verdictMeta[result.overall.verdict]?.bg || 'bg-slate-500') +
+                    ' ' +
+                    (verdictMeta[result.overall.verdict]?.text || 'text-white')
+                  }
+                >
+                  {verdictMeta[result.overall.verdict]?.label || result.overall.verdict}
+                </span>
+              </div>
+              <div className="text-sm text-slate-700">{result.overall.summary}</div>
+            </div>
+          </div>
+
+          {/* 5 维评分 */}
+          <div className="bg-white border rounded-lg p-3 space-y-2">
+            <div className="text-xs font-medium text-slate-600 mb-1">📊 维度评分</div>
+            {result.dimensions.map((d) => (
+              <div key={d.key} className="flex items-start gap-3">
+                <div className="w-24 shrink-0 text-xs text-slate-700 pt-0.5">{d.label}</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-2 flex-1 bg-slate-100 rounded overflow-hidden">
+                      <div
+                        className={
+                          'h-full rounded transition-all ' +
+                          (d.score >= 8
+                            ? 'bg-emerald-500'
+                            : d.score >= 5
+                            ? 'bg-amber-500'
+                            : 'bg-red-500')
+                        }
+                        style={{ width: `${(d.score / 10) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-slate-700 w-8 text-right">
+                      {d.score}/10
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-600 leading-5">{d.comment}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 分章节点评 */}
+          {result.section_reviews?.length > 0 && (
+            <details className="bg-white border rounded-lg">
+              <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                📝 分章节点评（{result.section_reviews.length} 段）
+              </summary>
+              <div className="px-3 pb-3 pt-1 space-y-3">
+                {result.section_reviews.map((s, i) => (
+                  <div key={i} className="border-l-2 border-violet-200 pl-3">
+                    <div className="text-xs font-semibold text-slate-800 mb-1">
+                      {s.section}
+                    </div>
+                    {s.good && (
+                      <div className="text-xs text-emerald-700 mb-1">
+                        ✓ {s.good}
+                      </div>
+                    )}
+                    {s.issues?.map((issue, j) => (
+                      <div key={j} className="text-xs text-red-600 leading-5">
+                        ✗ {issue}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+
+          {/* 修改建议 */}
+          {result.suggestions?.length > 0 && (
+            <div className="bg-white border rounded-lg p-3">
+              <div className="text-xs font-medium text-slate-700 mb-2">
+                💡 修改建议（{result.suggestions.length} 条）
+              </div>
+              <ol className="list-decimal pl-5 space-y-1 text-xs text-slate-700">
+                {result.suggestions.map((s, i) => (
+                  <li key={i} className="leading-5">{s}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

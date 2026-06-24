@@ -24,6 +24,7 @@ import type {
 } from 'openai/resources/chat/completions';
 import { SYSTEM_PROMPT } from '@/lib/prompt';
 import { TOOL_SPECS, runTool, extractSavedDoc } from '@/lib/tools';
+import { resolveModel } from '@/lib/models';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -139,15 +140,20 @@ function _emitNew(
 }
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  const baseURL = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
-  const model = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
-
-  if (!apiKey) return new Response('未配置 DEEPSEEK_API_KEY', { status: 500 });
-
-  const { userInput } = (await req.json()) as { userInput?: string };
+  const { userInput, modelId } = (await req.json()) as {
+    userInput?: string;
+    modelId?: string;
+  };
   if (!userInput?.trim()) return new Response('userInput 不能为空', { status: 400 });
 
+  // 通过 modelId 解析连接配置；失败直接 4xx
+  let resolved;
+  try {
+    resolved = resolveModel(modelId);
+  } catch (e) {
+    return new Response((e as Error).message, { status: 400 });
+  }
+  const { apiKey, baseURL, model } = resolved;
   const client = new OpenAI({ apiKey, baseURL });
   const encoder = new TextEncoder();
 
