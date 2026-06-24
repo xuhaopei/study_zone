@@ -1,0 +1,29 @@
+{
+  "name": "req-optimizer-agent-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "需求优化 Agent 的 Next.js 演示界面（阶段 6：聊天式 Agent UI，实时显示思考链）",
+  "scripts": {
+    "dev": "next dev -p 3002",
+    "build": "next build",
+    "start": "next start -p 3002",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^14.2.33",
+    "openai": "^4.52.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.6",
+    "typescript": "^5.4.5"
+  }
+}

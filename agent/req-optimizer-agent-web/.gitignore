@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+*.log
+.DS_Store
+
+# Agent 运行产物
+trace-*.json
+optimized-by-agent-*.md
