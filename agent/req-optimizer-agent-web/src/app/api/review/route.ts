@@ -5,7 +5,7 @@
  * 评审 Agent：不使用工具，纯 chat.completions 流式输出 JSON。
  *
  * 响应：NDJSON 流，事件类型：
- *   { type: 'start',     model }                                 一次：开始
+ *   { type: 'start',     model, modelId, modelLabel }            一次：开始
  *   { type: 'delta',     text }                                  多次：原始 JSON 文本增量（用于"看模型写"）
  *   { type: 'parsed',    review }                                整段 JSON 解析成功后发一次（用于渲染评分卡）
  *   { type: 'error',     message }                               任意时刻
@@ -277,7 +277,7 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     return new Response((e as Error).message, { status: 400 });
   }
-  const { apiKey, baseURL, model } = resolved;
+  const { id: resolvedId, label, apiKey, baseURL, model } = resolved;
   const client = new OpenAI({ apiKey, baseURL });
   const encoder = new TextEncoder();
 
@@ -290,7 +290,12 @@ export async function POST(req: NextRequest) {
       let raw = '';
 
       try {
-        send({ type: 'start', model });
+        send({
+          type: 'start',
+          model,
+          modelId: resolvedId,
+          modelLabel: label,
+        });
 
         const completion = await client.chat.completions.create({
           model,

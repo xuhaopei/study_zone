@@ -19,19 +19,52 @@ export interface ModelDef {
   envPrefix: string;
 }
 
-/** 注册可用模型。新增供应商时只需要在这里加一行 + .env.local 补三个变量 */
+/**
+ * 注册可用模型。新增供应商时只需要在这里加一行 + .env.local 补三个变量。
+ *
+ * 当前梯度（按"长文档 + 工具调用 + JSON 输出"的综合实战表现排）：
+ *   ⭐⭐⭐⭐⭐ claude-sonnet-46   —— 最强基线
+ *   ⭐⭐⭐⭐  deepseek-chat       —— 流式丝滑、性价比
+ *   ⭐⭐⭐⭐  kimi-k2.5           —— 中文长文档强
+ *   ⭐⭐⭐   hy3-preview         —— 国产中等档（混元）
+ *   ⭐⭐⭐   claude-haiku        —— 小杯 Claude，便宜快但推理弱
+ *
+ * 故意保留偏弱模型用来观察 Agent 框架在弱 LLM 上的鲁棒性：
+ *   - 是否还会忘记调用 save_optimized_doc 工具
+ *   - 评审 JSON 是否更容易出格式问题（测试 6 档兜底）
+ *   - Actor-Critic 迭代能否把分数从 5~6 推到 8~9
+ *   - 弱作者 + 强评审 的经典混搭效果
+ */
 export const MODELS: ModelDef[] = [
   {
     id: 'claude-sonnet-46',
-    label: 'Claude Sonnet 4.6',
-    description: '公司内 qproxy 网关 · 中文 PRD 质量最好',
+    label: 'Claude Sonnet 4.6 ⭐⭐⭐⭐⭐',
+    description: 'qproxy 网关 · 综合最强基线 · 中文 PRD 质量最好',
     envPrefix: 'CLAUDE_SONNET_46',
   },
   {
+    id: 'kimi-k2-5',
+    label: 'Kimi K2.5 ⭐⭐⭐⭐',
+    description: 'qproxy 网关 · 月之暗面 · 中文长文档理解强',
+    envPrefix: 'KIMI_K2_5',
+  },
+  {
     id: 'deepseek-chat',
-    label: 'DeepSeek Chat',
-    description: 'DeepSeek 官方直连 · 流式最丝滑',
+    label: 'DeepSeek Chat ⭐⭐⭐⭐',
+    description: 'DeepSeek 官方直连 · 流式最丝滑 · 性价比',
     envPrefix: 'DEEPSEEK_CHAT',
+  },
+  {
+    id: 'hy3-preview',
+    label: 'Hunyuan 3 Preview ⭐⭐⭐',
+    description: 'qproxy 网关 · 腾讯混元 · 国产中等档（适合做对照组）',
+    envPrefix: 'HY3_PREVIEW',
+  },
+  {
+    id: 'claude-haiku',
+    label: 'Claude Haiku ⭐⭐⭐',
+    description: 'qproxy 网关 · 小杯 Claude · 便宜快但推理较弱（适合做对照组）',
+    envPrefix: 'CLAUDE_HAIKU',
   },
 ];
 

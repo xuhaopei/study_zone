@@ -3,18 +3,18 @@
  * Body: { userInput: string }
  *
  * 响应：NDJSON 流（每行一个 JSON 事件），事件类型：
- *   { type: 'start',      model, tools, ts }                    一次：刚开始
+ *   { type: 'start',      model, modelId, modelLabel, tools, ts }  一次：刚开始
  *   { type: 'turn_start', turn }                                每轮开始
- *   { type: 'think_delta',turn, text }                          模型思考文字的增量（流式逐 token 推送）
+ *   { type: 'think_delta',turn, text }                          模型思考文字 / 最终文档的增量（流式逐 token）
  *   { type: 'think_end',  turn }                                这一轮 think 结束（开始进入 tool_calls 阶段）
  *   { type: 'tool_call',  turn, id, name, args }                每个工具调用（args 是已解析对象）
  *   { type: 'tool_result',turn, id, name, result, durationMs }  工具返回（字符串）
- *   { type: 'doc_delta',  turn, id, text }                      save_optimized_doc 的 markdown 字段增量（流式拼接）
- *   { type: 'saved_doc',  filename, markdown }                  模型调用 save_optimized_doc 时单独抛一次（便于前端立即拿到文档）
- *   { type: 'final',      text }                                finish_reason=stop 时的最后一段文字
+ *   { type: 'final',      text }                                finish_reason=stop 时的最终文档（纯 markdown）
  *   { type: 'trace',      messages }                            最后一次：完整 messages 数组（前端可下载）
  *   { type: 'error',      message }                             任意时刻
  *   { type: 'done',       totalTurns, totalToolCalls, elapsedMs } 最后一次
+ *
+ * 注意：原 save_optimized_doc 工具已移除 —— 作者收集完知识后直接以 markdown 作为最终回复。
  */
 import { NextRequest } from 'next/server';
 import OpenAI from 'openai';
@@ -23,7 +23,7 @@ import type {
   ChatCompletionMessageToolCall,
 } from 'openai/resources/chat/completions';
 import { SYSTEM_PROMPT } from '@/lib/prompt';
-import { TOOL_SPECS, runTool, extractSavedDoc } from '@/lib/tools';
+import { TOOL_SPECS, runTool } from '@/lib/tools';
 import { resolveModel } from '@/lib/models';
 
 export const runtime = 'nodejs';
@@ -31,120 +31,22 @@ export const dynamic = 'force-dynamic';
 
 const MAX_TURNS = 12;
 
-/**
- * 流式解码 save_optimized_doc 的 markdown 字段。
- *
- * tool_call.arguments 是一段不断增长的 JSON 字符串，例如：
- *   '{"markdown":"# 一、需求背\\n好的'
- *   '{"markdown":"# 一、需求背\\n好的，下面是优化后的文档…","filename":"xxx"}'
- *
- * 我们的目标：每次累积一点，就尽量多解出"已确认完整"的 markdown 文本（已转义符号都还原），
- * 推给前端实时显示。还没出现 `"markdown":"` 之前，什么都不输出；已出现的部分只解到
- * "尾巴前一位"，避免半个转义序列被错误地原样输出。
- *
- * 返回值：本次新增的解码文本（可能为空字符串）。
- */
-function pumpDocDelta(acc: {
-  arguments: string;
-  docDecoded?: string;
-  docDecodeUpTo?: number;
-  docDone?: boolean;
-}): string {
-  if (acc.docDone) return '';
-
-  const args = acc.arguments;
-  // 还没看到 markdown 字段就先不动。
-  // ⚠️ 不同模型在 key 和 value 之间的空白习惯不同：
-  //   Claude:  '"markdown":"...'
-  //   DeepSeek: '"markdown": "...'   ← 有空格
-  // 用正则匹配 0 个或多个空白
-  const m = args.match(/"markdown"\s*:\s*"/);
-  if (!m || m.index === undefined) return '';
-
-  const valueStart = m.index + m[0].length;
-  let pos = acc.docDecodeUpTo ?? valueStart;
-  if (pos < valueStart) pos = valueStart;
-
-  let decoded = acc.docDecoded ?? '';
-  let i = pos;
-  // 解码到 args 长度 - 1：最后一个字符可能是 \ 的前半段，留到下一次再解
-  const safeEnd = args.length - 1;
-
-  while (i < safeEnd) {
-    const ch = args.charCodeAt(i);
-    if (ch === 0x22 /* " */) {
-      // markdown 字段结束
-      acc.docDecoded = decoded;
-      acc.docDecodeUpTo = i + 1;
-      acc.docDone = true;
-      return _emitNew(acc, decoded);
-    }
-    if (ch === 0x5c /* \ */) {
-      // 转义序列：需要至少 2 个字符
-      if (i + 1 >= args.length) break;
-      const next = args[i + 1];
-      let out = '';
-      let advance = 2;
-      switch (next) {
-        case '"': out = '"'; break;
-        case '\\': out = '\\'; break;
-        case '/': out = '/'; break;
-        case 'n': out = '\n'; break;
-        case 'r': out = '\r'; break;
-        case 't': out = '\t'; break;
-        case 'b': out = '\b'; break;
-        case 'f': out = '\f'; break;
-        case 'u': {
-          // \uXXXX 需要 6 个字符
-          if (i + 6 > args.length) {
-            // 等下次再解
-            advance = 0;
-            break;
-          }
-          const code = parseInt(args.substring(i + 2, i + 6), 16);
-          if (Number.isFinite(code)) {
-            out = String.fromCharCode(code);
-            advance = 6;
-          } else {
-            out = next;
-            advance = 2;
-          }
-          break;
-        }
-        default:
-          out = next;
-          advance = 2;
-      }
-      if (advance === 0) break; // 等下次
-      decoded += out;
-      i += advance;
-    } else {
-      decoded += args[i];
-      i += 1;
-    }
-  }
-
-  return _emitNew(acc, decoded, i);
-}
-
-function _emitNew(
-  acc: { docDecoded?: string; docDecodeUpTo?: number },
-  decoded: string,
-  newPos?: number,
-): string {
-  const prev = acc.docDecoded ?? '';
-  const added = decoded.slice(prev.length);
-  acc.docDecoded = decoded;
-  if (newPos !== undefined) acc.docDecodeUpTo = newPos;
-  return added;
-}
-
 export async function POST(req: NextRequest) {
-  const { userInput, modelId } = (await req.json()) as {
+  const body = (await req.json()) as {
     userInput?: string;
     modelId?: string;
+    // 高级用法：编排器（如 /api/refine）可以直接传入预构造的 messages
+    // 用于"带评审反馈的迭代改写"等场景。传了 messages 则忽略 userInput
+    messages?: ChatCompletionMessageParam[];
   };
-  if (!userInput?.trim()) return new Response('userInput 不能为空', { status: 400 });
+  const { userInput, modelId, messages: injectedMessages } = body;
+
+  // 校验：要么传 userInput，要么传 messages（且非空）
+  const hasInjected =
+    Array.isArray(injectedMessages) && injectedMessages.length > 0;
+  if (!hasInjected && !userInput?.trim()) {
+    return new Response('userInput 不能为空', { status: 400 });
+  }
 
   // 通过 modelId 解析连接配置；失败直接 4xx
   let resolved;
@@ -153,7 +55,7 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     return new Response((e as Error).message, { status: 400 });
   }
-  const { apiKey, baseURL, model } = resolved;
+  const { id: resolvedId, label, apiKey, baseURL, model } = resolved;
   const client = new OpenAI({ apiKey, baseURL });
   const encoder = new TextEncoder();
 
@@ -169,15 +71,20 @@ export async function POST(req: NextRequest) {
       try {
         send({
           type: 'start',
-          model,
+          model,                 // 实际下发给 LLM 的 model name（如 claude-sonnet-4-6）
+          modelId: resolvedId,   // 模型注册表里的 id（如 claude-sonnet-46）
+          modelLabel: label,     // 用户可读标签（如 "Claude Sonnet 4.6 ⭐⭐⭐⭐⭐"）
           tools: TOOL_SPECS.map((t) => t.function.name),
           ts: new Date().toISOString(),
         });
 
-        const messages: ChatCompletionMessageParam[] = [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userInput },
-        ];
+        const messages: ChatCompletionMessageParam[] = hasInjected
+          ? // 编排器注入的完整上下文：直接拿来用
+            [...(injectedMessages as ChatCompletionMessageParam[])]
+          : [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: userInput as string },
+            ];
 
         for (let turn = 1; turn <= MAX_TURNS; turn++) {
           lastTurn = turn;
@@ -199,15 +106,7 @@ export async function POST(req: NextRequest) {
           // tool_calls 增量拼接：index → { id, name, arguments(累计字符串) }
           const toolCallsAcc: Record<
             number,
-            {
-              id?: string;
-              name?: string;
-              arguments: string;
-              // 针对 save_optimized_doc：跟踪 markdown 字段的流式解码状态
-              docDecoded?: string; // 已经解出的 markdown 真实文本
-              docDecodeUpTo?: number; // 已解码到 arguments 字符串的哪一位
-              docDone?: boolean; // markdown 字段是否已经完整结束
-            }
+            { id?: string; name?: string; arguments: string }
           > = {};
           let finishReason: string | null = null;
 
@@ -216,7 +115,7 @@ export async function POST(req: NextRequest) {
             if (!choice) continue;
             const delta = choice.delta;
 
-            // 1) 思考文字增量 → 立即推给前端（流式打字机效果）
+            // 1) 思考/最终文档文字增量 → 立即推给前端（流式打字机效果）
             if (typeof delta.content === 'string' && delta.content.length > 0) {
               fullContent += delta.content;
               send({ type: 'think_delta', turn, text: delta.content });
@@ -234,21 +133,6 @@ export async function POST(req: NextRequest) {
                 if (tcDelta.function?.name) acc.name = tcDelta.function.name;
                 if (tcDelta.function?.arguments) {
                   acc.arguments += tcDelta.function.arguments;
-
-                  // 特殊优化：save_optimized_doc 的 markdown 字段流式推送
-                  // 注意：DeepSeek 流式下 id 只在第一个 chunk 出现，
-                  // 因此判断条件只看 name，并在发事件时给出 fallback id
-                  if (acc.name === 'save_optimized_doc' && !acc.docDone) {
-                    const newChunk = pumpDocDelta(acc);
-                    if (newChunk) {
-                      send({
-                        type: 'doc_delta',
-                        turn,
-                        id: acc.id || `call_${turn}_${idx}`,
-                        text: newChunk,
-                      });
-                    }
-                  }
                 }
               }
             }
@@ -320,18 +204,6 @@ export async function POST(req: NextRequest) {
                 result,
                 durationMs,
               });
-
-              // 如果是 save_optimized_doc，把文档单独发一次给前端
-              if (name === 'save_optimized_doc') {
-                const saved = extractSavedDoc(argsJson);
-                if (saved) {
-                  send({
-                    type: 'saved_doc',
-                    filename: saved.filename,
-                    markdown: saved.markdown,
-                  });
-                }
-              }
 
               // 回灌
               messages.push({

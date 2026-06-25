@@ -116,38 +116,6 @@ const read_knowledge_file: { spec: ToolSpec; handler: ToolHandler } = {
   },
 };
 
-// ============ 4. save_optimized_doc ============
-// 注意：网页版改为返回 markdown 内容本身，由前端处理保存/下载
-const save_optimized_doc: { spec: ToolSpec; handler: ToolHandler } = {
-  spec: {
-    type: 'function',
-    function: {
-      name: 'save_optimized_doc',
-      description:
-        '提交最终优化好的需求文档（Markdown）。' +
-        '只有当你已经收集完所需信息、产出了完整 6 段式文档时才调用。' +
-        '调用此工具后任务即完成。',
-      parameters: {
-        type: 'object',
-        properties: {
-          markdown: { type: 'string', description: '完整的 Markdown 文档内容' },
-          filename: {
-            type: 'string',
-            description: '推荐的文件名，可选，默认 optimized-by-agent.md',
-          },
-        },
-        required: ['markdown'],
-      },
-    },
-  },
-  handler: async (args) => {
-    const md = String(args.markdown || '');
-    if (!md.trim()) return '错误：markdown 不能为空';
-    const filename = String(args.filename || 'optimized-by-agent.md');
-    return `✅ 已提交最终文档：${filename}（${md.length} 字符）。用户可在页面下载。`;
-  },
-};
-
 // ============ 5. get_current_time ============
 const get_current_time: { spec: ToolSpec; handler: ToolHandler } = {
   spec: {
@@ -203,11 +171,11 @@ const fetch_url: { spec: ToolSpec; handler: ToolHandler } = {
 };
 
 // ============ 导出 ============
+// 注意：原 save_optimized_doc 工具已移除 —— 作者现在直接以 markdown 作为最终回复输出
 export const TOOLS: Record<string, { spec: ToolSpec; handler: ToolHandler }> = {
   search_knowledge,
   list_knowledge,
   read_knowledge_file,
-  save_optimized_doc,
   get_current_time,
   fetch_url,
 };
@@ -230,20 +198,4 @@ export async function runTool(name: string, argsJson: string): Promise<string> {
   }
 }
 
-/**
- * 提取最后一次 save_optimized_doc 调用的 markdown，供前端直接下载。
- * 我们这里不再依赖 handler 内部保存——保存交给前端。
- */
-export function extractSavedDoc(argsJson: string): { markdown: string; filename: string } | null {
-  try {
-    const args = JSON.parse(argsJson || '{}') as Record<string, unknown>;
-    const md = String(args.markdown || '');
-    if (!md.trim()) return null;
-    return {
-      markdown: md,
-      filename: String(args.filename || 'optimized-by-agent.md'),
-    };
-  } catch {
-    return null;
-  }
-}
+
