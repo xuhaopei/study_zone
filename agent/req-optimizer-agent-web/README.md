@@ -79,19 +79,19 @@ CHAT_DEFAULT_ID=claude-sonnet-46
 
 # qproxy 网关上的模型（4 个共用同一个 API_KEY 和 BASE_URL）
 CHAT_CLAUDE_SONNET_46_API_KEY=xxxxxxxxxx
-CHAT_CLAUDE_SONNET_46_BASE_URL=https://qproxy.gtimg.com/v1
+CHAT_CLAUDE_SONNET_46_BASE_URL=xxxx
 CHAT_CLAUDE_SONNET_46_MODEL=claude-sonnet-4-6
 
 CHAT_KIMI_K2_5_API_KEY=xxxxxxxxxx
-CHAT_KIMI_K2_5_BASE_URL=https://qproxy.gtimg.com/v1
+CHAT_KIMI_K2_5_BASE_URL=xxxx
 CHAT_KIMI_K2_5_MODEL=kimi-k2.5
 
 CHAT_HY3_PREVIEW_API_KEY=xxxxxxxxxx
-CHAT_HY3_PREVIEW_BASE_URL=https://qproxy.gtimg.com/v1
+CHAT_HY3_PREVIEW_BASE_URL=xxxx
 CHAT_HY3_PREVIEW_MODEL=hy3-preview
 
 CHAT_CLAUDE_HAIKU_API_KEY=xxxxxxxxxx
-CHAT_CLAUDE_HAIKU_BASE_URL=https://qproxy.gtimg.com/v1
+CHAT_CLAUDE_HAIKU_BASE_URL=xxxx
 CHAT_CLAUDE_HAIKU_MODEL=claude-haiku-4-5
 
 # DeepSeek 直连
