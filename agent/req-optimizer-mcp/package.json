@@ -1,0 +1,27 @@
+{
+  "name": "req-optimizer-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "阶段 8 · 把 req-optimizer 的工具改造成 MCP server",
+  "type": "module",
+  "bin": {
+    "req-optimizer-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "dotenv": "^16.4.5",
+    "openai": "^4.52.0",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.5"
+  }
+}
