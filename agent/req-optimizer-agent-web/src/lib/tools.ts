@@ -2,6 +2,14 @@
  * Agent 可调用的工具集合（Next.js 版，与 req-optimizer CLI 项目的 6 个工具保持一致）
  *
  * 每个工具：spec（发给 LLM）+ handler（实际执行）。
+ *
+ * ⚠️ 阶段 8.3 起 —— 本文件已退居 LEGACY/对照组：
+ *   /api/agent 不再 import 这里的 TOOL_SPECS / runTool，而是通过 @/lib/mcp-client
+ *   连接 req-optimizer-mcp server 动态发现 + 远程调用工具。
+ *   保留本文件是为了：
+ *     1. 对照"硬编码工具"与"MCP 动态发现"两种写法的差异
+ *     2. ToolSpec 类型仍被 mcp-client.ts 复用（统一 OpenAI tool 形状）
+ *   如需回退到本地工具，只要把 route.ts 的 import 换回来即可。
  */
 import * as fs from 'fs';
 import * as path from 'path';

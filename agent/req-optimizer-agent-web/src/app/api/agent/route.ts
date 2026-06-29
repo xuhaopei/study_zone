@@ -23,7 +23,9 @@ import type {
   ChatCompletionMessageToolCall,
 } from 'openai/resources/chat/completions';
 import { SYSTEM_PROMPT } from '@/lib/prompt';
-import { TOOL_SPECS, runTool } from '@/lib/tools';
+// 阶段 8.3：工具不再来自本地硬编码（@/lib/tools），改为通过 MCP client
+// 连接 req-optimizer-mcp server 动态发现（listTools）+ 远程调用（callTool）。
+import { getMcpToolSpecs, callMcpTool } from '@/lib/mcp-client';
 import { resolveModel } from '@/lib/models';
 
 export const runtime = 'nodejs';
@@ -69,12 +71,16 @@ export async function POST(req: NextRequest) {
       let lastTurn = 0;
 
       try {
+        // 阶段 8.3：运行时向 MCP server 动态发现工具（替代过去的本地 TOOL_SPECS 常量）
+        // 第一次会拉起 server 子进程并完成 initialize 握手，之后进程内复用同一连接。
+        const toolSpecs = await getMcpToolSpecs();
+
         send({
           type: 'start',
           model,                 // 实际下发给 LLM 的 model name（如 claude-sonnet-4-6）
           modelId: resolvedId,   // 模型注册表里的 id（如 claude-sonnet-46）
           modelLabel: label,     // 用户可读标签（如 "Claude Sonnet 4.6 ⭐⭐⭐⭐⭐"）
-          tools: TOOL_SPECS.map((t) => t.function.name),
+          tools: toolSpecs.map((t) => t.function.name),
           ts: new Date().toISOString(),
         });
 
@@ -95,7 +101,7 @@ export async function POST(req: NextRequest) {
           const stream = await client.chat.completions.create({
             model,
             messages,
-            tools: TOOL_SPECS,
+            tools: toolSpecs,
             tool_choice: 'auto',
             temperature: 0.3,
             stream: true,
@@ -191,8 +197,13 @@ export async function POST(req: NextRequest) {
                 args: parsedArgs,
               });
 
+              // 远程调用：把工具执行委托给 MCP server 进程（替代旧的本地 runTool）
+              const argsObj =
+                parsedArgs && typeof parsedArgs === 'object'
+                  ? (parsedArgs as Record<string, unknown>)
+                  : {};
               const t0 = Date.now();
-              const result = await runTool(name, argsJson);
+              const result = await callMcpTool(name, argsObj);
               const durationMs = Date.now() - t0;
               totalToolCalls++;
 
