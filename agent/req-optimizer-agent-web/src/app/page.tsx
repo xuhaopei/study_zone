@@ -106,6 +106,21 @@ type ModelOption = {
   configured: boolean;
 };
 
+// ===== MCP Resources / Prompts 类型（与 /api/mcp 响应一致） =====
+// 注意：前端自己定义轻量类型，不能 import @/lib/mcp-client
+//（那是服务端模块，会把 MCP SDK / child_process 打进 client bundle）
+type McpResourceInfo = {
+  uri: string;
+  name: string;
+  description?: string;
+  mimeType?: string;
+};
+type McpPromptInfo = {
+  name: string;
+  description?: string;
+  arguments?: { name: string; description?: string; required?: boolean }[];
+};
+
 // ===== 自动迭代相关类型（与 /api/refine 协议对应） =====
 type IterRoundSummary = {
   round: number;
@@ -194,6 +209,12 @@ export default function HomePage() {
   const [writerModelId, setWriterModelId] = useState<string>('');
   const [reviewerModelId, setReviewerModelId] = useState<string>('');
 
+  // 阶段 8.5：MCP Resources / Prompts
+  const [mcpResources, setMcpResources] = useState<McpResourceInfo[]>([]);
+  const [mcpPrompts, setMcpPrompts] = useState<McpPromptInfo[]>([]);
+  const [mcpPanelOpen, setMcpPanelOpen] = useState(false);
+  const [mcpBusy, setMcpBusy] = useState(false); // 读资源/取模板时禁用按钮
+
   // 首次加载拉取可用模型列表
   useEffect(() => {
     let cancelled = false;
@@ -217,6 +238,89 @@ export default function HomePage() {
   }, []);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // 阶段 8.5：首屏拉取 MCP 资源 / 模板列表
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/mcp');
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          resources: McpResourceInfo[];
+          prompts: McpPromptInfo[];
+        };
+        if (cancelled) return;
+        setMcpResources(data.resources || []);
+        setMcpPrompts(data.prompts || []);
+      } catch {
+        // MCP 列表失败不影响主体功能
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /**
+   * 点击某个资源 → 读取全文 → 作为"参考资料"追加进输入框。
+   * 这正是 Resources 的用法：由【用户】决定把哪份文档塞进上下文，不经过 LLM 工具调用。
+   */
+  async function handleInsertResource(r: McpResourceInfo) {
+    if (mcpBusy) return;
+    setMcpBusy(true);
+    try {
+      const res = await fetch('/api/mcp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'readResource', uri: r.uri }),
+      });
+      const data = (await res.json()) as { text?: string; error?: string };
+      if (data.error) {
+        setError(`读取资源失败：${data.error}`);
+        return;
+      }
+      const block = `\n\n[参考资料 · ${r.name}]\n${data.text ?? ''}\n`;
+      setInput((prev) => prev + block);
+    } catch (e) {
+      setError(`读取资源失败：${(e as Error).message}`);
+    } finally {
+      setMcpBusy(false);
+    }
+  }
+
+  /**
+   * 点击某个 prompt 模板 → 用当前输入框内容作为参数 → 展开成完整提示词填回输入框。
+   * 这是 Prompts 的用法：把复杂提示词沉淀到 server，用户触发时一键展开。
+   */
+  async function handleApplyPrompt(p: McpPromptInfo) {
+    if (mcpBusy) return;
+    setMcpBusy(true);
+    try {
+      // 约定：第一个参数（如 requirement）取当前输入框内容
+      const argName = p.arguments?.[0]?.name;
+      const args: Record<string, string> = argName
+        ? { [argName]: input.trim() }
+        : {};
+      const res = await fetch('/api/mcp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'getPrompt', name: p.name, arguments: args }),
+      });
+      const data = (await res.json()) as { text?: string; error?: string };
+      if (data.error) {
+        setError(`展开模板失败：${data.error}`);
+        return;
+      }
+      if (data.text) setInput(data.text);
+      setMcpPanelOpen(false);
+    } catch (e) {
+      setError(`展开模板失败：${(e as Error).message}`);
+    } finally {
+      setMcpBusy(false);
+    }
+  }
+
 
   // 自动滚到底
   useEffect(() => {
@@ -838,6 +942,17 @@ export default function HomePage() {
       {/* 输入区 */}
       <footer className="border-t bg-white">
         <div className="max-w-5xl mx-auto px-4 py-3">
+          {/* 阶段 8.5：MCP 资源 / 模板工具条 */}
+          <McpToolbar
+            resources={mcpResources}
+            prompts={mcpPrompts}
+            open={mcpPanelOpen}
+            busy={mcpBusy}
+            disabled={running}
+            onToggle={() => setMcpPanelOpen((v) => !v)}
+            onInsertResource={handleInsertResource}
+            onApplyPrompt={handleApplyPrompt}
+          />
           <div className="flex items-end gap-2">
             <textarea
               value={input}
@@ -878,6 +993,96 @@ export default function HomePage() {
         </div>
       </footer>
     </main>
+  );
+}
+
+// ===== 阶段 8.5：MCP 资源 / 模板工具条 =====
+function McpToolbar({
+  resources,
+  prompts,
+  open,
+  busy,
+  disabled,
+  onToggle,
+  onInsertResource,
+  onApplyPrompt,
+}: {
+  resources: McpResourceInfo[];
+  prompts: McpPromptInfo[];
+  open: boolean;
+  busy: boolean;
+  disabled: boolean;
+  onToggle: () => void;
+  onInsertResource: (r: McpResourceInfo) => void;
+  onApplyPrompt: (p: McpPromptInfo) => void;
+}) {
+  // server 没暴露任何资源/模板时不渲染
+  if (resources.length === 0 && prompts.length === 0) return null;
+
+  return (
+    <div className="mb-2">
+      <button
+        onClick={onToggle}
+        className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
+        title="来自 MCP server 的 Resources / Prompts"
+      >
+        <span>{open ? '▾' : '▸'}</span>
+        <span>📚 MCP 知识库资源 / 模板</span>
+        <span className="text-slate-400">
+          （{resources.length} 资源 · {prompts.length} 模板）
+        </span>
+      </button>
+
+      {open && (
+        <div className="mt-2 p-3 rounded-lg border bg-slate-50 space-y-3">
+          {/* Prompts：点击展开模板填入输入框 */}
+          {prompts.length > 0 && (
+            <div>
+              <div className="text-[11px] font-medium text-slate-500 mb-1">
+                ⚡ 提示词模板（点击用当前输入作参数展开）
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {prompts.map((p) => (
+                  <button
+                    key={p.name}
+                    onClick={() => onApplyPrompt(p)}
+                    disabled={busy || disabled}
+                    title={p.description || p.name}
+                    className="px-2.5 py-1 text-xs rounded-md border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                  >
+                    /{p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Resources：点击把整篇文档塞进输入框 */}
+          {resources.length > 0 && (
+            <div>
+              <div className="text-[11px] font-medium text-slate-500 mb-1">
+                📄 知识库资源（点击把全文作为参考资料插入输入框）
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {resources.map((r) => (
+                  <button
+                    key={r.uri}
+                    onClick={() => onInsertResource(r)}
+                    disabled={busy || disabled}
+                    title={r.description || r.uri}
+                    className="px-2.5 py-1 text-xs rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                  >
+                    {r.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {busy && <div className="text-[11px] text-slate-400">处理中…</div>}
+        </div>
+      )}
+    </div>
   );
 }
 

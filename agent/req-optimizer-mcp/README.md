@@ -8,10 +8,101 @@
 | 阶段 | 目标 | 状态 |
 |---|---|---|
 | 8.0 | 跑通一个最小 hello server，让 IDE 能调用 | ✅ 完成 |
-| **8.1**（当前） | 5 个真实工具（search/list/read/time/fetch）+ 知识库加载 | ✅ 完成 |
-| 8.2 | 在 IDE 里实际用它做需求优化对话 | 等你测 |
-| 8.3 | 让 `req-optimizer-agent-web` 也通过 MCP client 调本 server | 后续 |
-| 8.4 | 进阶：暴露 Resources（知识库文件）+ Prompts（"优化需求"模板） | 后续 |
+| 8.1 | 5 个真实工具（search/list/read/time/fetch）+ 知识库加载 | ✅ 完成 |
+| 8.2 | 在 IDE 里实际用它做需求优化对话 | ✅ 完成 |
+| 8.3 | 让 `req-optimizer-agent-web` 通过 MCP client 调本 server（工具源：硬编码 → 动态发现） | ✅ 完成 |
+| 8.4 | 暴露 Resources（知识库文件）+ Prompts（"优化需求"模板） | ✅ 完成 |
+| **8.5**（当前） | web UI 接入 Resources / Prompts（之前只用了 Tools） | ✅ 完成 |
+
+## 阶段 8.5：web UI 用上 Resources / Prompts
+
+8.3 时 web 端只用了 MCP 的 **Tools**，8.4 在 server 端补了 Resources/Prompts 但前端没用上。
+本阶段把这两个原语接进 `req-optimizer-agent-web` 的界面：
+
+| 文件 | 变化 |
+|---|---|
+| `src/lib/mcp-client.ts` | 新增 `listMcpResources` / `readMcpResource` / `listMcpPrompts` / `getMcpPrompt`（与 Tools 共用同一条连接） |
+| `src/app/api/mcp/route.ts` | **新增**：`GET` 列出资源+模板；`POST` 读资源 / 展开模板 |
+| `src/app/page.tsx` | 新增 `McpToolbar` 面板（输入框上方），首屏拉 `/api/mcp` |
+
+交互设计（体现三原语的不同触发方）：
+
+| 原语 | UI 入口 | 行为 | 谁触发 |
+|---|---|---|---|
+| Resources | 资源芯片（知识库各 .md） | 点击 → 读全文 → 作为"参考资料"追加进输入框 | **用户**主动挂载 |
+| Prompts | `/optimize_requirement` 按钮 | 点击 → 用当前输入作 `requirement` 参数 → 展开成完整工作流提示词填回输入框 | **用户**主动触发 |
+| Tools | （无 UI，发送后自动） | Agent 运行时自行决定调哪个工具 | **LLM** 自主决策 |
+
+> 验证：`npm run dev` 起 web，输入框上方出现"📚 MCP 知识库资源 / 模板"折叠条；
+> 展开后点资源会把文档追加进输入框，点 `/optimize_requirement` 会把输入展开成 6 段式工作流提示词。
+
+## 阶段 8.4：补齐 MCP 三大原语（Tools / Resources / Prompts）
+
+至此 server 同时暴露 MCP 的三种原语，区别如下：
+
+| 原语 | 是什么 | 由谁决定使用 | 本项目里的实现 |
+|---|---|---|---|
+| **Tools** | 模型可调用的"动作/函数" | **LLM 自主决策** | 5 个工具（search/list/read/time/fetch） |
+| **Resources** | 暴露给 Host 的"数据/文件" | **用户/Host**（如 @ 文件、拖进对话） | 知识库每篇 .md → `knowledge://<文件名>` |
+| **Prompts** | 参数化的提示词模板 | **用户主动触发**（如 slash command） | `optimize_requirement`（6 段式 PRD 工作流） |
+
+### Resources（知识库文件）
+
+- `list_resources`：扫描知识库目录，每篇 `.md` 暴露为一条 resource，uri 形如 `knowledge://登录-最佳实践.md`
+- `read_resource`：按 uri 取回整篇文档（含目录穿越防护）
+- 用途：IDE 里可以把整篇知识库文档直接拖进上下文，不必走 LLM 的工具调用
+
+### Prompts（优化需求模板）
+
+- `list_prompts` / `get_prompt`：暴露 `optimize_requirement` 模板
+- 入参 `requirement`（一句话粗糙需求）
+- `get_prompt` 返回拼好的 messages：把"先检索知识库 → 产出 6 段式 PRD"的完整工作流提示词 + 用户需求组装好，Host 直接灌进对话
+- 用途：在 IDE 里变成 slash command，用户不用每次手敲整套提示词
+
+> 验证：重新 `npm run build` 后重启 Host，应能在 MCP 面板看到
+> Resources 列表（4 篇知识库）和 Prompts 列表（optimize_requirement）。
+> 启动日志也会打印 tools / prompts / resources 三行。
+
+## 阶段 8.3：web 端从"硬编码工具"切到"MCP 动态发现"
+
+`req-optimizer-agent-web` 原来把工具的 spec + handler 都写死在 `src/lib/tools.ts`，
+现在改成运行时连本 server 动态发现：
+
+```
+旧：api/agent/route.ts ──import──► src/lib/tools.ts（spec & handler 都在 web 端）
+
+新：api/agent/route.ts ──► src/lib/mcp-client.ts ──stdio──► req-optimizer-mcp 子进程
+                                    │                          （spec & handler 都在 server 端）
+                                    ├─ listTools()  动态发现工具
+                                    └─ callTool()   远程执行
+```
+
+web 端改了什么：
+
+| 文件 | 变化 |
+|---|---|
+| `package.json` | 新增依赖 `@modelcontextprotocol/sdk` |
+| `src/lib/mcp-client.ts` | **新增**：单例连接 + `getMcpToolSpecs()` + `callMcpTool()` |
+| `src/app/api/agent/route.ts` | `TOOL_SPECS`→`getMcpToolSpecs()`、`runTool()`→`callMcpTool()` |
+| `src/lib/tools.ts` | 退居 LEGACY/对照组（仅保留 `ToolSpec` 类型给 mcp-client 复用） |
+
+关键映射（MCP tool 形状 → OpenAI tool 形状）：
+
+```
+MCP:    { name, description?, inputSchema(JSON Schema) }
+OpenAI: { type:'function', function:{ name, description, parameters } }
+        // inputSchema 直接塞进 parameters，外面包一层 function
+```
+
+连接方式：web 进程用 `process.execPath`（当前 node）拉起 `req-optimizer-mcp/dist/index.js`
+作为子进程，stdio 通信，进程内单例复用（RAG 索引常驻 server 进程，不再在 web 端重复加载）。
+
+可用 `MCP_SERVER_ENTRY` 环境变量覆盖 server 入口路径，默认 `../req-optimizer-mcp/dist/index.js`。
+
+> 验证：先 `npm run build` 编译本 server，再到 web 项目 `npm run dev`，
+> 触发一次需求优化，看 web 终端是否打印 `[mcp-client] connected to server: ...`
+> 以及 server 的 `[req-optimizer-mcp] server started, tools: ...`。
+
 
 ## 当前暴露的 5 个工具
 

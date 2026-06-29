@@ -180,3 +180,78 @@ export async function callMcpTool(
     return `错误：MCP 工具调用失败 ${(e as Error).message}`;
   }
 }
+
+// ============================================================
+// 阶段 8.5 · Resources / Prompts 客户端封装
+// ============================================================
+// 注意：和 Tools 用的是同一条连接（同一个 getClient 单例）。
+//   - Resources：list_resources / read_resource —— 给用户/UI 浏览、挂载文档
+//   - Prompts：  list_prompts / get_prompt       —— 给用户触发预置模板
+// 这三类原语共用一个 client，listXxx/readXxx/getXxx 用法风格完全一致。
+// ============================================================
+
+export interface McpResourceInfo {
+  uri: string;
+  name: string;
+  description?: string;
+  mimeType?: string;
+}
+
+export interface McpPromptArg {
+  name: string;
+  description?: string;
+  required?: boolean;
+}
+
+export interface McpPromptInfo {
+  name: string;
+  description?: string;
+  arguments?: McpPromptArg[];
+}
+
+/** 列出 server 暴露的所有资源（本项目即知识库各 .md 文件） */
+export async function listMcpResources(): Promise<McpResourceInfo[]> {
+  const client = await getClient();
+  const { resources } = await client.listResources();
+  return resources.map((r) => ({
+    uri: r.uri,
+    name: (r.name as string) ?? r.uri,
+    description: r.description as string | undefined,
+    mimeType: r.mimeType as string | undefined,
+  }));
+}
+
+/** 读取指定资源的全文（把 contents 里的 text 片段拼起来） */
+export async function readMcpResource(uri: string): Promise<string> {
+  const client = await getClient();
+  const res = await client.readResource({ uri });
+  const contents = (res.contents ?? []) as Array<{ text?: string }>;
+  return contents.map((c) => c.text ?? '').join('\n');
+}
+
+/** 列出 server 暴露的所有 prompt 模板（含参数说明） */
+export async function listMcpPrompts(): Promise<McpPromptInfo[]> {
+  const client = await getClient();
+  const { prompts } = await client.listPrompts();
+  return prompts.map((p) => ({
+    name: p.name,
+    description: p.description as string | undefined,
+    arguments: (p.arguments as McpPromptArg[] | undefined) ?? [],
+  }));
+}
+
+/** 取一个 prompt 模板，用入参拼好后返回纯文本（把 messages 的 text 拼接） */
+export async function getMcpPrompt(
+  name: string,
+  args: Record<string, string>,
+): Promise<string> {
+  const client = await getClient();
+  const res = await client.getPrompt({ name, arguments: args });
+  const messages = (res.messages ?? []) as Array<{
+    content?: { type?: string; text?: string };
+  }>;
+  return messages
+    .map((m) => (m.content?.type === 'text' ? m.content.text ?? '' : ''))
+    .filter(Boolean)
+    .join('\n\n');
+}

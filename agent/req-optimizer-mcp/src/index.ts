@@ -43,6 +43,12 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  // 阶段 8.4：Resources（把知识库文件暴露给 Host 浏览/读取）
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+  // 阶段 8.4：Prompts（预置"优化需求"模板，IDE 里变成 slash command）
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
@@ -205,10 +211,16 @@ function defineTool<S extends z.ZodTypeAny>(def: ToolDef<S>): ToolDef<S> {
 const server = new Server(
   {
     name: 'req-optimizer-mcp',
-    version: '0.3.0',
+    version: '0.4.0',
   },
   {
-    capabilities: { tools: {} },
+    // 阶段 8.4：除了 tools，再声明 resources / prompts 两个能力
+    // Host 看到这些声明后，才会来调 list_resources / list_prompts
+    capabilities: {
+      tools: {},
+      resources: {},
+      prompts: {},
+    },
   },
 );
 
@@ -267,13 +279,139 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 // ============================================================
+// 阶段 8.4 · Resources：把知识库 .md 文件暴露给 Host
+// ============================================================
+// Tools vs Resources 的区别（关键概念）：
+//   - Tools     = 模型【主动调用】的"动作/函数"（要不要调由 LLM 决策）
+//   - Resources = 暴露给 Host 的"数据/文件"，由【用户/Host】决定要不要塞进上下文
+//                 （比如 IDE 里 @ 一个文件、把文档拖进对话）
+// 这里把知识库每篇文档暴露成一个 resource，uri 用自定义 scheme：knowledge://<文件名>
+// ============================================================
+
+const KNOWLEDGE_URI_PREFIX = 'knowledge://';
+
+// list_resources：扫描知识库目录，每个 .md 暴露成一条 resource
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  const dir = getKnowledgeDir();
+  if (!fs.existsSync(dir)) return { resources: [] };
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.md'));
+  return {
+    resources: files.map((f) => ({
+      uri: `${KNOWLEDGE_URI_PREFIX}${encodeURIComponent(f)}`,
+      name: f,
+      description: `知识库文档：${f}`,
+      mimeType: 'text/markdown',
+    })),
+  };
+});
+
+// read_resource：按 uri 取回整篇文档内容
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const { uri } = request.params;
+  if (!uri.startsWith(KNOWLEDGE_URI_PREFIX)) {
+    throw new Error(`不支持的资源 uri: ${uri}`);
+  }
+  const filename = decodeURIComponent(uri.slice(KNOWLEDGE_URI_PREFIX.length));
+  // 防目录穿越（与 read_knowledge_file 工具同款防护）
+  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    throw new Error('非法文件名：不能包含路径分隔符');
+  }
+  const dir = getKnowledgeDir();
+  const full = path.join(dir, filename);
+  if (!fs.existsSync(full)) throw new Error(`资源不存在: ${filename}`);
+  const text = fs.readFileSync(full, 'utf-8');
+  return {
+    contents: [{ uri, mimeType: 'text/markdown', text }],
+  };
+});
+
+// ============================================================
+// 阶段 8.4 · Prompts：预置"优化需求"模板（IDE 里可当 slash command）
+// ============================================================
+// Prompt = 一段【参数化的提示词模板】，由用户主动触发（如 /optimize_requirement）。
+// Host 调 get_prompt 时传入参数，server 返回拼好的 messages，Host 直接灌进对话。
+// 好处：把"6 段式 PRD 工作流"这套复杂提示词沉淀到 server，用户不用每次手敲。
+// ============================================================
+
+interface PromptDef {
+  name: string;
+  description: string;
+  arguments: { name: string; description: string; required: boolean }[];
+  /** 用传入参数拼出要灌给 LLM 的 messages（role 仅支持 user/assistant） */
+  build: (args: Record<string, string>) => { role: 'user' | 'assistant'; text: string }[];
+}
+
+const PROMPT_DEFS: PromptDef[] = [
+  {
+    name: 'optimize_requirement',
+    description:
+      '把一句话粗糙需求展开成结构化的 6 段式 PRD 工作流提示词。' +
+      '会引导模型先检索知识库再产出文档。',
+    arguments: [
+      {
+        name: 'requirement',
+        description: '原始的粗糙需求，例如"做个登录功能"',
+        required: true,
+      },
+    ],
+    build: (args) => {
+      const requirement = (args.requirement || '').trim() || '（未提供需求，请向用户追问）';
+      return [
+        {
+          role: 'user',
+          text:
+            `你是一名"需求优化 Agent"。你可以调用本 server 提供的工具：\n` +
+            `list_knowledge / search_knowledge / read_knowledge_file / get_current_time / fetch_url。\n\n` +
+            `# 工作流程\n` +
+            `1. 先调 list_knowledge() 了解知识库总览。\n` +
+            `2. 针对需求里的每个关键主题（密码/锁定/会话/合规/性能等）分别 search_knowledge()。\n` +
+            `3. 片段不足时用 read_knowledge_file() 读全文。\n` +
+            `4. 覆盖足够规范后，直接以 6 段式 Markdown 作为最终回复：\n` +
+            `   # 一、需求背景\n   # 二、目标用户与使用场景\n   # 三、功能需求（FR）\n` +
+            `   # 四、非功能需求（NFR）\n   # 五、验收标准\n   # 六、风险与开放问题\n\n` +
+            `# 严格要求\n` +
+            `- 最终回复以 \`# 一、需求背景\` 开头，纯 Markdown，不要前置说明文字。\n` +
+            `- 每个 FR 含"描述/输入/输出/约束/异常分支"，验收标准用 Given/When/Then。\n` +
+            `- NFR 里的具体数字必须来自检索到的知识片段，不要凭空编造；找不到的列入第六章。\n\n` +
+            `现在请优化以下需求：\n\n${requirement}`,
+        },
+      ];
+    },
+  },
+];
+
+// list_prompts：从 PROMPT_DEFS 派生
+server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+  prompts: PROMPT_DEFS.map((p) => ({
+    name: p.name,
+    description: p.description,
+    arguments: p.arguments,
+  })),
+}));
+
+// get_prompt：按 name 找到模板，用入参拼出 messages 返回
+server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+  const def = PROMPT_DEFS.find((p) => p.name === name);
+  if (!def) throw new Error(`未知 prompt: ${name}`);
+  const messages = def.build(args ?? {}).map((m) => ({
+    role: m.role,
+    content: { type: 'text' as const, text: m.text },
+  }));
+  return { description: def.description, messages };
+});
+
+// ============================================================
 // 启动
 // ============================================================
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error(
-    `[req-optimizer-mcp] server started, tools: ${TOOL_DEFS.map((t) => t.name).join(' / ')}`,
+    `[req-optimizer-mcp] server started\n` +
+      `  tools:     ${TOOL_DEFS.map((t) => t.name).join(' / ')}\n` +
+      `  prompts:   ${PROMPT_DEFS.map((p) => p.name).join(' / ')}\n` +
+      `  resources: knowledge://*（动态扫描知识库目录）`,
   );
 }
 
